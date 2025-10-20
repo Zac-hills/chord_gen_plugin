@@ -464,7 +464,7 @@ void MainComponent::showAudioSettings()
     auto audioSetupComp = std::make_unique<juce::AudioDeviceSelectorComponent>(
         deviceManager,
         0, 0,  // min/max input channels
-        2, 2,  // min/max output channels
+        0, 256,  // min/max output channels
         false, // show MIDI inputs
         false, // show MIDI outputs
         false, // show channels as stereo pairs
@@ -489,266 +489,40 @@ void MainComponent::showAudioSettings()
 
 void MainComponent::tryInitializeAudioDevice()
 {
-    auto& audioDeviceTypes = deviceManager.getAvailableDeviceTypes();
+    DBG("=== Initializing Default Audio Device ===");
     
-    // Look specifically for your Starship/Matisse HD Audio Controller
-    // First try ALSA devices specifically
-    for (auto* deviceType : audioDeviceTypes)
+    // Simply use the system default audio output device
+    auto error = deviceManager.initialise(0, 2, nullptr, true);
+    
+    if (error.isEmpty())
     {
-        DBG("Checking device type: " << deviceType->getTypeName());
-        
-        // Prioritize ALSA for hardware devices
-        if (deviceType->getTypeName() == "ALSA")
+        auto* currentDevice = deviceManager.getCurrentAudioDevice();
+        if (currentDevice != nullptr)
         {
-            deviceType->scanForDevices();
-            auto deviceNames = deviceType->getDeviceNames(false); // Output devices only
-            
-            for (const auto& deviceName : deviceNames)
-            {
-                DBG("Found ALSA device: " << deviceName);
-                
-                // Look for your specific audio device patterns
-                if (deviceName.contains("Starship") || 
-                    deviceName.contains("Matisse") || 
-                    deviceName.contains("Line Out") ||
-                    deviceName.contains("Built-in Audio") ||
-                    deviceName.contains("HDA") ||
-                    deviceName.contains("PCH") ||
-                    deviceName.contains("Audio Controller") ||
-                    deviceName == "default" ||
-                    deviceName == "hw:0,0" ||
-                    deviceName == "plughw:0,0")
-                {
-                    DBG("Trying to use ALSA device: " << deviceName);
-                    
-                    auto setup = deviceManager.getAudioDeviceSetup();
-                    setup.outputDeviceName = deviceName;
-                    setup.inputDeviceName = juce::String(); // No input needed
-                    setup.sampleRate = 44100.0;
-                    setup.bufferSize = 512;
-                    setup.useDefaultOutputChannels = true;
-                    
-                    juce::String error = deviceManager.setAudioDeviceSetup(setup, true);
-                    if (error.isEmpty())
-                    {
-                        DBG("Successfully configured ALSA device: " << deviceName);
-                        return;
-                    }
-                    else
-                    {
-                        DBG("Failed to configure ALSA device " << deviceName << ": " << error);
-                    }
-                }
-            }
+            DBG("Successfully initialized default audio device: " << currentDevice->getName());
+            DBG("Sample rate: " << currentDevice->getCurrentSampleRate());
+            DBG("Buffer size: " << currentDevice->getCurrentBufferSizeSamples());
+            DBG("Output channels: " << currentDevice->getOutputChannelNames().size());
+        }
+        else
+        {
+            DBG("Audio device manager initialized but no current device found");
         }
     }
-    
-    // If ALSA didn't work, try other device types (JACK, PulseAudio, etc.)
-    for (auto* deviceType : audioDeviceTypes)
+    else
     {
-        if (deviceType->getTypeName() != "ALSA") // Skip ALSA since we already tried it
-        {
-            DBG("Trying device type: " << deviceType->getTypeName());
-            deviceType->scanForDevices();
-            auto deviceNames = deviceType->getDeviceNames(false);
-            
-            for (const auto& deviceName : deviceNames)
-            {
-                DBG("Found " << deviceType->getTypeName() << " device: " << deviceName);
-                
-                auto setup = deviceManager.getAudioDeviceSetup();
-                setup.outputDeviceName = deviceName;
-                setup.inputDeviceName = juce::String();
-                setup.sampleRate = 44100.0;
-                setup.bufferSize = 512;
-                setup.useDefaultOutputChannels = true;
-                
-                juce::String error = deviceManager.setAudioDeviceSetup(setup, true);
-                if (error.isEmpty())
-                {
-                    DBG("Successfully configured " << deviceType->getTypeName() << " device: " << deviceName);
-                    return;
-                }
-                else
-                {
-                    DBG("Failed to configure " << deviceType->getTypeName() << " device " << deviceName << ": " << error);
-                }
-            }
-        }
+        DBG("Failed to initialize default audio device: " << error);
     }
-    
-    // If we couldn't find your specific device, try manual ALSA device strings
-    DBG("Couldn't find Starship/Matisse device, trying manual ALSA device strings...");
-    
-    // Try common ALSA device strings for hardware card 0
-    juce::StringArray alsaDeviceStrings = {
-        "default",
-        "hw:0",
-        "hw:0,0", 
-        "hw:0,1",
-        "hw:0,2",
-        "hw:0,3",
-        "plughw:0",
-        "plughw:0,0",
-        "plughw:0,1",
-        "pulse",
-        "pipewire"
-    };
-    
-    // Find ALSA device type specifically
-    for (auto* deviceType : audioDeviceTypes)
-    {
-        if (deviceType->getTypeName() == "ALSA")
-        {
-            for (const auto& deviceString : alsaDeviceStrings)
-            {
-                DBG("Trying manual ALSA device: " << deviceString);
-                
-                auto setup = deviceManager.getAudioDeviceSetup();
-                setup.outputDeviceName = deviceString;
-                setup.inputDeviceName = juce::String();
-                setup.sampleRate = 44100.0;
-                setup.bufferSize = 512;
-                setup.useDefaultOutputChannels = true;
-                
-                juce::String error = deviceManager.setAudioDeviceSetup(setup, true);
-                if (error.isEmpty())
-                {
-                    DBG("Successfully configured manual ALSA device: " << deviceString);
-                    return;
-                }
-                else
-                {
-                    DBG("Failed manual ALSA device " << deviceString << ": " << error);
-                }
-            }
-            break; // Only try ALSA device type for manual strings
-        }
-    }
-    
-    // If ALSA manual strings didn't work, try any available output device
-    DBG("Manual ALSA devices failed, trying any available output...");
-    for (auto* deviceType : audioDeviceTypes)
-    {
-        deviceType->scanForDevices();
-        auto deviceNames = deviceType->getDeviceNames(false); // false = output devices
-        
-        if (!deviceNames.isEmpty())
-        {
-            auto setup = deviceManager.getAudioDeviceSetup();
-            setup.outputDeviceName = deviceNames[0];
-            setup.inputDeviceName = juce::String();
-            setup.sampleRate = 44100.0;
-            setup.bufferSize = 512;
-            
-            juce::String error = deviceManager.setAudioDeviceSetup(setup, true);
-            if (error.isEmpty())
-            {
-                DBG("Successfully configured fallback device: " << deviceNames[0]);
-                return;
-            }
-        }
-    }
-    
-    // Last resort: Try to check JACK availability
-    DBG("=== Checking JACK availability ===");
-    juce::ChildProcess jackProcess;
-    if (jackProcess.start("which jackd"))
-    {
-        jackProcess.waitForProcessToFinish(2000);
-        if (jackProcess.getExitCode() == 0)
-        {
-            DBG("JACK is available on system");
-            // Try to connect to existing JACK server
-            for (auto* deviceType : audioDeviceTypes)
-            {
-                if (deviceType->getTypeName() == "JACK")
-                {
-                    DBG("Found JACK device type, scanning...");
-                    deviceType->scanForDevices();
-                    auto jackDevices = deviceType->getDeviceNames(false);
-                    for (const auto& jackDevice : jackDevices)
-                    {
-                        DBG("Trying JACK device: " << jackDevice);
-                        auto setup = deviceManager.getAudioDeviceSetup();
-                        setup.outputDeviceName = jackDevice;
-                        setup.inputDeviceName = juce::String();
-                        
-                        juce::String error = deviceManager.setAudioDeviceSetup(setup, true);
-                        if (error.isEmpty())
-                        {
-                            DBG("Successfully configured JACK device: " << jackDevice);
-                            return;
-                        }
-                    }
-                }
-            }
-        }
-    }
-    
-    DBG("Could not initialize any audio device!");
 }
 
 void MainComponent::detectSystemAudioDevices()
 {
-    DBG("=== System Audio Device Detection ===");
+    DBG("=== Available Audio Device Types ===");
     
-    // Check ALSA devices
-    DBG("Checking ALSA devices with aplay...");
-    juce::ChildProcess alsaProcess;
-    if (alsaProcess.start("aplay -l"))
+    auto& audioDeviceTypes = deviceManager.getAvailableDeviceTypes();
+    for (int i = 0; i < audioDeviceTypes.size(); ++i)
     {
-        alsaProcess.waitForProcessToFinish(5000);
-        auto alsaOutput = alsaProcess.readAllProcessOutput();
-        DBG("ALSA devices found:");
-        DBG(alsaOutput);
-    }
-    
-    // Check PulseAudio devices
-    DBG("Checking PulseAudio devices...");
-    juce::ChildProcess pulseProcess;
-    if (pulseProcess.start("pactl list sinks short"))
-    {
-        pulseProcess.waitForProcessToFinish(5000);
-        auto pulseOutput = pulseProcess.readAllProcessOutput();
-        DBG("PulseAudio sinks found:");
-        DBG(pulseOutput);
-    }
-    
-    // Check if PipeWire is running
-    DBG("Checking for PipeWire...");
-    juce::ChildProcess pipewireProcess;
-    if (pipewireProcess.start("pgrep pipewire"))
-    {
-        pipewireProcess.waitForProcessToFinish(2000);
-        if (pipewireProcess.getExitCode() == 0)
-        {
-            DBG("PipeWire is running");
-        }
-        else
-        {
-            DBG("PipeWire not detected");
-        }
-    }
-    
-    // Check /proc/asound for hardware devices
-    DBG("Checking /proc/asound/cards...");
-    juce::File asoundCards("/proc/asound/cards");
-    if (asoundCards.exists())
-    {
-        auto cardsContent = asoundCards.loadFileAsString();
-        DBG("Hardware audio cards:");
-        DBG(cardsContent);
-    }
-    
-    // Try to use ALSA device files directly
-    DBG("Checking ALSA device files...");
-    for (int i = 0; i < 4; ++i)
-    {
-        juce::File alsaDevice("/dev/snd/pcmC" + juce::String(i) + "D0p");
-        if (alsaDevice.exists())
-        {
-            DBG("Found ALSA playback device: " << alsaDevice.getFullPathName());
-        }
+        auto* deviceType = audioDeviceTypes[i];
+        DBG("Type " << i << ": " << deviceType->getTypeName());
     }
 }
