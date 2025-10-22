@@ -35,8 +35,35 @@ MainComponent::MainComponent() : keyboard(keyboardState, juce::MidiKeyboardCompo
     chordTypeComboBox.addItem("Triads", 1);
     chordTypeComboBox.addItem("Seventh Chords", 2);
     chordTypeComboBox.setSelectedId(1);
-    chordTypeComboBox.onChange = [this] { updateDisplay(); };
+    chordTypeComboBox.onChange = [this] { 
+        updateDisplay();
+        // If currently playing, reload the progression with new chord type
+        if (isPlaying)
+        {
+            playProgression();
+        }
+    };
     addAndMakeVisible(chordTypeComboBox);
+    
+    // Add time signature combo box
+    timeSignatureComboBox.addItem("4/4", 1);
+    timeSignatureComboBox.addItem("3/4", 2);
+    timeSignatureComboBox.addItem("6/8", 3);
+    timeSignatureComboBox.addItem("5/4", 4);
+    timeSignatureComboBox.addItem("7/8", 5);
+    timeSignatureComboBox.addItem("2/4", 6);
+    timeSignatureComboBox.setSelectedId(1);
+    timeSignatureComboBox.onChange = [this] { 
+        updateTimeSignature();
+        if (isPlaying)
+        {
+            updateChordDuration();
+        }
+    };
+    addAndMakeVisible(timeSignatureComboBox);
+    
+    timeSignatureLabel.setText("Time Signature:", juce::dontSendNotification);
+    addAndMakeVisible(timeSignatureLabel);
     
     scaleNotesLabel.setText("Scale Notes: ", juce::dontSendNotification);
     scaleNotesLabel.setFont(juce::Font(16.0f, juce::Font::bold));
@@ -61,6 +88,11 @@ MainComponent::MainComponent() : keyboard(keyboardState, juce::MidiKeyboardCompo
     stopButton.setButtonText("Stop");
     stopButton.onClick = [this] { stopProgression(); };
     addAndMakeVisible(stopButton);
+    
+    loopButton.setButtonText("Loop");
+    loopButton.setToggleState(false, juce::dontSendNotification);
+    loopButton.onClick = [this] { shouldLoop = loopButton.getToggleState(); };
+    addAndMakeVisible(loopButton);
     
     tempoSlider.setRange(60.0, 200.0);
     tempoSlider.setValue(120.0);
@@ -92,6 +124,14 @@ MainComponent::MainComponent() : keyboard(keyboardState, juce::MidiKeyboardCompo
         tryInitializeAudioDevice();
     };
     addAndMakeVisible(refreshAudioButton);
+    
+    // Initialize playback state
+    isPlaying = false;
+    shouldLoop = false;
+    currentChordIndex = 0;
+    samplesUntilNextChord = 0;
+    beatsPerMeasure = 4;
+    beatUnit = 4;
     
     // Detect system audio devices first
     detectSystemAudioDevices();
@@ -216,15 +256,23 @@ void MainComponent::getNextAudioBlock (const juce::AudioSourceChannelInfo& buffe
                     playChord(currentProgression[currentChordIndex]);
                     currentChordIndex++;
                     
-                    // Update tempo-based timing
-                    double currentTempo = tempoSlider.getValue();
-                    samplesPerBeat = static_cast<int>((60.0 / currentTempo) * sampleRate);
+                    // Update timing based on time signature and tempo
+                    updateChordDuration();
                     samplesUntilNextChord = samplesPerBeat;
                 }
                 else
                 {
                     // End of progression
-                    stopProgression();
+                    if (shouldLoop)
+                    {
+                        // Loop back to the beginning
+                        currentChordIndex = 0;
+                        stopCurrentChord();
+                    }
+                    else
+                    {
+                        stopProgression();
+                    }
                 }
             }
             else
@@ -290,10 +338,15 @@ void MainComponent::resized()
     auto controlSection = bounds.removeFromTop(50);
     playButton.setBounds(controlSection.removeFromLeft(80).reduced(5));
     stopButton.setBounds(controlSection.removeFromLeft(80).reduced(5));
+    loopButton.setBounds(controlSection.removeFromLeft(80).reduced(5));
     
     auto tempoSection = controlSection.removeFromLeft(200).reduced(5);
     tempoLabel.setBounds(tempoSection.removeFromTop(20));
     tempoSlider.setBounds(tempoSection);
+    
+    auto timeSignatureSection = controlSection.removeFromLeft(150).reduced(5);
+    timeSignatureLabel.setBounds(timeSignatureSection.removeFromTop(20));
+    timeSignatureComboBox.setBounds(timeSignatureSection);
     
     audioSettingsButton.setBounds(controlSection.removeFromLeft(120).reduced(5));
     testToneButton.setBounds(controlSection.removeFromLeft(100).reduced(5));
@@ -319,11 +372,23 @@ void MainComponent::keySelectionChanged()
     int selectedKey = keyComboBox.getSelectedId() - 1;
     keyManager.setCurrentKey(static_cast<KeyManager::Key>(selectedKey));
     updateDisplay();
+    
+    // If currently playing, reload the progression with the new key
+    if (isPlaying)
+    {
+        playProgression();
+    }
 }
 
 void MainComponent::progressionSelectionChanged()
 {
     updateDisplay();
+    
+    // If currently playing, reload the progression
+    if (isPlaying)
+    {
+        playProgression();
+    }
 }
 
 void MainComponent::updateDisplay()
@@ -390,6 +455,57 @@ void MainComponent::updateDisplay()
     }
 }
 
+void MainComponent::updateTimeSignature()
+{
+    int selectedId = timeSignatureComboBox.getSelectedId();
+    switch (selectedId)
+    {
+        case 1: // 4/4
+            beatsPerMeasure = 4;
+            beatUnit = 4;
+            break;
+        case 2: // 3/4
+            beatsPerMeasure = 3;
+            beatUnit = 4;
+            break;
+        case 3: // 6/8
+            beatsPerMeasure = 6;
+            beatUnit = 8;
+            break;
+        case 4: // 5/4
+            beatsPerMeasure = 5;
+            beatUnit = 4;
+            break;
+        case 5: // 7/8
+            beatsPerMeasure = 7;
+            beatUnit = 8;
+            break;
+        case 6: // 2/4
+            beatsPerMeasure = 2;
+            beatUnit = 4;
+            break;
+        default:
+            beatsPerMeasure = 4;
+            beatUnit = 4;
+            break;
+    }
+}
+
+void MainComponent::updateChordDuration()
+{
+    // Update samples per beat based on the beat unit
+    double currentTempo = tempoSlider.getValue();
+    
+    // Calculate samples per beat (quarter note)
+    double quarterNoteDuration = 60.0 / currentTempo;
+    
+    // Adjust for beat unit (e.g., 8th notes are half a quarter note)
+    double beatDuration = quarterNoteDuration * (4.0 / beatUnit);
+    
+    // Each chord lasts for the full measure
+    samplesPerBeat = static_cast<int>(beatDuration * beatsPerMeasure * sampleRate);
+}
+
 //==============================================================================
 // MIDI Playback Methods
 
@@ -409,9 +525,8 @@ void MainComponent::playProgression()
             currentChordIndex = 0;
             isPlaying = true;
             
-            // Calculate initial timing
-            double currentTempo = tempoSlider.getValue();
-            samplesPerBeat = static_cast<int>((60.0 / currentTempo) * sampleRate);
+            // Calculate initial timing based on time signature
+            updateChordDuration();
             samplesUntilNextChord = 0; // Start immediately
         }
     }

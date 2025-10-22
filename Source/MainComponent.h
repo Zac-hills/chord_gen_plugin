@@ -157,8 +157,10 @@ private:
     juce::ComboBox keyComboBox;
     juce::ComboBox progressionComboBox;
     juce::ComboBox chordTypeComboBox;
+    juce::ComboBox timeSignatureComboBox;
     juce::TextButton playButton;
     juce::TextButton stopButton;
+    juce::ToggleButton loopButton;
     juce::Slider tempoSlider;
     juce::TextButton audioSettingsButton;
     juce::TextButton testToneButton;
@@ -169,6 +171,7 @@ private:
     juce::Label chordsLabel;
     juce::Label progressionLabel;
     juce::Label tempoLabel;
+    juce::Label timeSignatureLabel;
     
     // Key Manager
     KeyManager keyManager;
@@ -180,12 +183,15 @@ private:
     
     // Playback state
     bool isPlaying;
+    bool shouldLoop;
     int currentChordIndex;
     juce::int64 nextChordTime;
     juce::int64 chordDuration;
     double sampleRate;
     int samplesPerBeat;
     int samplesUntilNextChord;
+    int beatsPerMeasure;
+    int beatUnit;
     std::vector<std::vector<int>> currentProgression;
     std::vector<int> currentChordNotes;
     
@@ -194,6 +200,8 @@ private:
     void keySelectionChanged();
     void progressionSelectionChanged();
     void updateDisplay();
+    void updateTimeSignature();
+    void updateChordDuration();
     
     // MIDI Playback functions
     void playProgression();
