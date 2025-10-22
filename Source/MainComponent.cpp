@@ -363,16 +363,18 @@ void MainComponent::updateDisplay()
         
         if (progressionIndex >= 0 && progressionIndex < progressions.size())
         {
-            auto progression = keyManager.getCommonProgression(progressions[progressionIndex]);
+            bool useSevenths = chordTypeComboBox.getSelectedId() == 2;
+            auto progression = keyManager.getCommonProgression(progressions[progressionIndex], useSevenths);
             juce::String progressionText = "Progression (" + juce::String(progressions[progressionIndex]) + "): ";
             
             for (int i = 0; i < progression.size(); ++i)
             {
                 if (!progression[i].empty())
                 {
-                    // Get the root note name
+                    // Get the root note name - convert MIDI note to pitch class
                     auto chromaticNames = keyManager.getChromaticNoteNames();
-                    juce::String rootNote = juce::String(chromaticNames[progression[i][0]]);
+                    int pitchClass = progression[i][0] % 12; // Convert MIDI note to pitch class (0-11)
+                    juce::String rootNote = juce::String(chromaticNames[pitchClass]);
                     progressionText += rootNote;
                     
                     if (i < progression.size() - 1)
@@ -402,7 +404,8 @@ void MainComponent::playProgression()
         
         if (progressionIndex >= 0 && progressionIndex < progressions.size())
         {
-            currentProgression = keyManager.getCommonProgression(progressions[progressionIndex]);
+            bool useSevenths = chordTypeComboBox.getSelectedId() == 2;
+            currentProgression = keyManager.getCommonProgression(progressions[progressionIndex], useSevenths);
             currentChordIndex = 0;
             isPlaying = true;
             
@@ -437,13 +440,9 @@ void MainComponent::playChord(const std::vector<int>& chord)
     {
         if (note >= 0 && note < 128)
         {
-            // Convert to MIDI note number (add octave offset)
-            int midiNote = note + 60; // Start from middle C
-            if (midiNote < 128)
-            {
-                keyboardState.noteOn(1, midiNote, 0.7f);
-                currentChordNotes.push_back(midiNote);
-            }
+            // Note is already a proper MIDI note number
+            keyboardState.noteOn(1, note, 0.7f);
+            currentChordNotes.push_back(note);
         }
     }
 }

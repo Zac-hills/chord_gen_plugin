@@ -80,10 +80,26 @@ std::vector<int> KeyManager::generateTriad(ScaleDegree degree) const
     
     if (degreeIndex >= 0 && degreeIndex < 7)
     {
-        // Root, Third, Fifth
-        chord.push_back(scaleNotes[degreeIndex]);
-        chord.push_back(scaleNotes[(degreeIndex + 2) % 7]);
-        chord.push_back(scaleNotes[(degreeIndex + 4) % 7]);
+        // Base octave (middle C is 60, so we start from C4)
+        int baseOctave = 60;
+        
+        // Stack thirds diatonically using scale degrees
+        // Root = 1st scale degree, Third = 3rd scale degree, Fifth = 5th scale degree
+        int root = baseOctave + scaleNotes[degreeIndex];                    // Root (1st)
+        int third = baseOctave + scaleNotes[(degreeIndex + 2) % 7];         // Third (3rd) 
+        int fifth = baseOctave + scaleNotes[(degreeIndex + 4) % 7];         // Fifth (5th)
+        
+        // Ensure proper octave ordering (third and fifth above root)
+        while (third <= root) third += 12;
+        while (fifth <= third) fifth += 12;
+        
+        // Keep chords in a reasonable range
+        while (root >= 84) { root -= 12; third -= 12; fifth -= 12; }
+        while (root < 48) { root += 12; third += 12; fifth += 12; }
+        
+        chord.push_back(root);
+        chord.push_back(third);
+        chord.push_back(fifth);
     }
     
     return chord;
@@ -97,8 +113,21 @@ std::vector<int> KeyManager::generateSeventh(ScaleDegree degree) const
     
     if (degreeIndex >= 0 && degreeIndex < 7 && !chord.empty())
     {
-        // Add seventh
-        chord.push_back(scaleNotes[(degreeIndex + 6) % 7]);
+        // Base octave (middle C is 60, so we start from C4)
+        int baseOctave = 60;
+        
+        // Add seventh diatonically - use the 7th scale degree from the root
+        // This gives us proper diatonic seventh chords (not chromatic)
+        int seventh = baseOctave + scaleNotes[(degreeIndex + 6) % 7];  // 7th scale degree
+        
+        // Ensure seventh is above the fifth (last note in chord)
+        int fifth = chord.back();
+        while (seventh <= fifth) seventh += 12;
+        
+        // Keep in reasonable range
+        while (seventh >= 96) seventh -= 12;
+        
+        chord.push_back(seventh);
     }
     
     return chord;
@@ -110,9 +139,21 @@ std::vector<int> KeyManager::generateChord(ScaleDegree degree, ChordType type) c
     int rootNote = getNoteFromDegree(degree);
     auto intervals = getChordIntervals(type);
     
+    // Base octave (middle C is 60, so we start from C4)
+    int baseOctave = 60;
+    
     for (int interval : intervals)
     {
-        chord.push_back((rootNote + interval) % 12);
+        // Calculate the note in the proper octave
+        int note = baseOctave + rootNote + interval;
+        
+        // Ensure we stay within MIDI range and don't go too high
+        while (note >= 84) // Keep chords below C6
+            note -= 12;
+        while (note < 48)  // Keep chords above C3
+            note += 12;
+            
+        chord.push_back(note);
     }
     
     return chord;
@@ -120,11 +161,23 @@ std::vector<int> KeyManager::generateChord(ScaleDegree degree, ChordType type) c
 
 std::vector<std::vector<int>> KeyManager::generateProgression(const std::vector<ScaleDegree>& degrees) const
 {
+    return generateProgression(degrees, false); // Default to triads
+}
+
+std::vector<std::vector<int>> KeyManager::generateProgression(const std::vector<ScaleDegree>& degrees, bool useSevenths) const
+{
     std::vector<std::vector<int>> progression;
     
     for (ScaleDegree degree : degrees)
     {
-        progression.push_back(generateTriad(degree));
+        if (useSevenths)
+        {
+            progression.push_back(generateSeventh(degree));
+        }
+        else
+        {
+            progression.push_back(generateTriad(degree));
+        }
     }
     
     return progression;
@@ -132,10 +185,15 @@ std::vector<std::vector<int>> KeyManager::generateProgression(const std::vector<
 
 std::vector<std::vector<int>> KeyManager::getCommonProgression(const std::string& progressionName) const
 {
+    return getCommonProgression(progressionName, false); // Default to triads
+}
+
+std::vector<std::vector<int>> KeyManager::getCommonProgression(const std::string& progressionName, bool useSevenths) const
+{
     auto it = commonProgressions.find(progressionName);
     if (it != commonProgressions.end())
     {
-        return generateProgression(it->second);
+        return generateProgression(it->second, useSevenths);
     }
     
     return {};

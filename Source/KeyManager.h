@@ -59,7 +59,9 @@ public:
     
     // Chord progression functions
     std::vector<std::vector<int>> generateProgression(const std::vector<ScaleDegree>& degrees) const;
+    std::vector<std::vector<int>> generateProgression(const std::vector<ScaleDegree>& degrees, bool useSevenths) const;
     std::vector<std::vector<int>> getCommonProgression(const std::string& progressionName) const;
+    std::vector<std::vector<int>> getCommonProgression(const std::string& progressionName, bool useSevenths) const;
     
     // Chord analysis
     ChordType analyzeTriad(ScaleDegree degree) const;

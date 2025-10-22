@@ -71,6 +71,46 @@
             }
         },
         {
+            "name": "Debug JUCE Application (macOS)",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/Builds/MacOSX/build/Debug/NewProject.app/Contents/MacOS/NewProject",
+            "args": [],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}",
+            "environment": [],
+            "externalConsole": false,
+            "MIMode": "lldb",
+            "preLaunchTask": "Build JUCE Project (macOS Debug)",
+            "logging": {
+                "diagnosticsLog": {
+                    "protocolMessages": false
+                },
+                "programOutput": true,
+                "trace": false
+            }
+        },
+        {
+            "name": "Run JUCE Application (macOS Release)",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/Builds/MacOSX/build/Release/NewProject.app/Contents/MacOS/NewProject",
+            "args": [],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}",
+            "environment": [],
+            "externalConsole": false,
+            "MIMode": "lldb",
+            "preLaunchTask": "Build JUCE Project (macOS Release)",
+            "logging": {
+                "diagnosticsLog": {
+                    "protocolMessages": false
+                },
+                "programOutput": true,
+                "trace": false
+            }
+        },
+        {
             "name": "Attach to JUCE Process",
             "type": "cppdbg",
             "request": "attach",
