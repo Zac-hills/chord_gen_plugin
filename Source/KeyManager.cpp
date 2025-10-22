@@ -190,13 +190,101 @@ std::vector<std::vector<int>> KeyManager::getCommonProgression(const std::string
 
 std::vector<std::vector<int>> KeyManager::getCommonProgression(const std::string& progressionName, bool useSevenths) const
 {
+    return getCommonProgression(progressionName, useSevenths, Voicing::Close);
+}
+
+std::vector<std::vector<int>> KeyManager::getCommonProgression(const std::string& progressionName, bool useSevenths, Voicing voicing) const
+{
     auto it = commonProgressions.find(progressionName);
     if (it != commonProgressions.end())
     {
-        return generateProgression(it->second, useSevenths);
+        auto progression = generateProgression(it->second, useSevenths);
+        
+        // Apply voicing to each chord in the progression
+        for (auto& chord : progression)
+        {
+            chord = applyVoicing(chord, voicing);
+        }
+        
+        return progression;
     }
     
     return {};
+}
+
+std::vector<int> KeyManager::applyVoicing(const std::vector<int>& chord, Voicing voicing) const
+{
+    if (chord.empty()) return chord;
+    
+    std::vector<int> voicedChord = chord;
+    
+    switch (voicing)
+    {
+        case Voicing::Close:
+            // Default - already close position
+            break;
+            
+        case Voicing::Open:
+            // Spread notes: root stays, move other notes up by octave alternating
+            if (voicedChord.size() >= 3)
+            {
+                voicedChord[1] += 12; // 3rd up an octave
+                if (voicedChord.size() >= 4)
+                    voicedChord[3] += 12; // 7th up an octave (if present)
+            }
+            break;
+            
+        case Voicing::Drop2:
+            // Take 2nd highest note and drop it an octave
+            if (voicedChord.size() >= 3)
+            {
+                int secondHighestIdx = voicedChord.size() - 2;
+                voicedChord[secondHighestIdx] -= 12;
+                std::sort(voicedChord.begin(), voicedChord.end());
+            }
+            break;
+            
+        case Voicing::Drop3:
+            // Take 3rd highest note and drop it an octave
+            if (voicedChord.size() >= 4)
+            {
+                int thirdHighestIdx = voicedChord.size() - 3;
+                voicedChord[thirdHighestIdx] -= 12;
+                std::sort(voicedChord.begin(), voicedChord.end());
+            }
+            break;
+            
+        case Voicing::FirstInversion:
+            // Move root up an octave (3rd becomes bass)
+            voicedChord[0] += 12;
+            std::sort(voicedChord.begin(), voicedChord.end());
+            break;
+            
+        case Voicing::SecondInversion:
+            // Move root and 3rd up an octave (5th becomes bass)
+            if (voicedChord.size() >= 3)
+            {
+                voicedChord[0] += 12; // Root up
+                voicedChord[1] += 12; // 3rd up
+                std::sort(voicedChord.begin(), voicedChord.end());
+            }
+            break;
+            
+        case Voicing::Spread:
+            // Wide spacing - each note progressively higher
+            for (size_t i = 1; i < voicedChord.size(); ++i)
+            {
+                voicedChord[i] += 12 * static_cast<int>(i);
+            }
+            break;
+            
+        case Voicing::RootPosition:
+        default:
+            // Keep as is
+            break;
+    }
+    
+    return voicedChord;
 }
 
 KeyManager::ChordType KeyManager::analyzeTriad(ScaleDegree degree) const

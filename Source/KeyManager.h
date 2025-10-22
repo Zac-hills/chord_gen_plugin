@@ -37,6 +37,18 @@ public:
         I = 1, II, III, IV, V, VI, VII
     };
     
+    enum class Voicing
+    {
+        Close,          // All notes within one octave (standard)
+        Open,           // Notes spread across 2+ octaves
+        Drop2,          // 2nd highest note dropped an octave
+        Drop3,          // 3rd highest note dropped an octave
+        RootPosition,   // Root in bass (no inversion)
+        FirstInversion, // 3rd in bass
+        SecondInversion,// 5th in bass
+        Spread          // Wide spacing (2-3 octaves)
+    };
+    
     KeyManager();
     ~KeyManager() = default;
     
@@ -62,6 +74,10 @@ public:
     std::vector<std::vector<int>> generateProgression(const std::vector<ScaleDegree>& degrees, bool useSevenths) const;
     std::vector<std::vector<int>> getCommonProgression(const std::string& progressionName) const;
     std::vector<std::vector<int>> getCommonProgression(const std::string& progressionName, bool useSevenths) const;
+    std::vector<std::vector<int>> getCommonProgression(const std::string& progressionName, bool useSevenths, Voicing voicing) const;
+    
+    // Voicing functions
+    std::vector<int> applyVoicing(const std::vector<int>& chord, Voicing voicing) const;
     
     // Chord analysis
     ChordType analyzeTriad(ScaleDegree degree) const;

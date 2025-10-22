@@ -65,6 +65,26 @@ MainComponent::MainComponent() : keyboard(keyboardState, juce::MidiKeyboardCompo
     timeSignatureLabel.setText("Time Signature:", juce::dontSendNotification);
     addAndMakeVisible(timeSignatureLabel);
     
+    // Add voicing combo box
+    voicingComboBox.addItem("Close Position", 1);
+    voicingComboBox.addItem("Open Position", 2);
+    voicingComboBox.addItem("Drop 2", 3);
+    voicingComboBox.addItem("Drop 3", 4);
+    voicingComboBox.addItem("1st Inversion", 5);
+    voicingComboBox.addItem("2nd Inversion", 6);
+    voicingComboBox.addItem("Spread", 7);
+    voicingComboBox.setSelectedId(1);
+    voicingComboBox.onChange = [this] { 
+        if (isPlaying)
+        {
+            playProgression();
+        }
+    };
+    addAndMakeVisible(voicingComboBox);
+    
+    voicingLabel.setText("Voicing:", juce::dontSendNotification);
+    addAndMakeVisible(voicingLabel);
+    
     scaleNotesLabel.setText("Scale Notes: ", juce::dontSendNotification);
     scaleNotesLabel.setFont(juce::Font(16.0f, juce::Font::bold));
     addAndMakeVisible(scaleNotesLabel);
@@ -327,10 +347,20 @@ void MainComponent::resized()
     auto bounds = getLocalBounds();
     bounds.removeFromTop(60); // Space for title
     
-    auto topSection = bounds.removeFromTop(100);
+    // First row: Key and Chord Type
+    auto topSection = bounds.removeFromTop(50);
     keyComboBox.setBounds(topSection.removeFromLeft(200).reduced(10));
     chordTypeComboBox.setBounds(topSection.removeFromLeft(200).reduced(10));
-    progressionComboBox.setBounds(topSection.reduced(10));
+    
+    auto voicingSection = topSection.removeFromLeft(200).reduced(5);
+    voicingLabel.setBounds(voicingSection.removeFromTop(20));
+    voicingComboBox.setBounds(voicingSection);
+    
+    bounds.removeFromTop(10);
+    
+    // Second row: Progression
+    auto progressionSection = bounds.removeFromTop(50);
+    progressionComboBox.setBounds(progressionSection.reduced(10));
     
     bounds.removeFromTop(20);
     
@@ -521,7 +551,23 @@ void MainComponent::playProgression()
         if (progressionIndex >= 0 && progressionIndex < progressions.size())
         {
             bool useSevenths = chordTypeComboBox.getSelectedId() == 2;
-            currentProgression = keyManager.getCommonProgression(progressions[progressionIndex], useSevenths);
+            
+            // Get selected voicing
+            KeyManager::Voicing voicing = KeyManager::Voicing::Close;
+            int voicingId = voicingComboBox.getSelectedId();
+            switch (voicingId)
+            {
+                case 1: voicing = KeyManager::Voicing::Close; break;
+                case 2: voicing = KeyManager::Voicing::Open; break;
+                case 3: voicing = KeyManager::Voicing::Drop2; break;
+                case 4: voicing = KeyManager::Voicing::Drop3; break;
+                case 5: voicing = KeyManager::Voicing::FirstInversion; break;
+                case 6: voicing = KeyManager::Voicing::SecondInversion; break;
+                case 7: voicing = KeyManager::Voicing::Spread; break;
+                default: voicing = KeyManager::Voicing::Close; break;
+            }
+            
+            currentProgression = keyManager.getCommonProgression(progressions[progressionIndex], useSevenths, voicing);
             currentChordIndex = 0;
             isPlaying = true;
             

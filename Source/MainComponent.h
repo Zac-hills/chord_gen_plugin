@@ -158,6 +158,7 @@ private:
     juce::ComboBox progressionComboBox;
     juce::ComboBox chordTypeComboBox;
     juce::ComboBox timeSignatureComboBox;
+    juce::ComboBox voicingComboBox;
     juce::TextButton playButton;
     juce::TextButton stopButton;
     juce::ToggleButton loopButton;
@@ -172,6 +173,7 @@ private:
     juce::Label progressionLabel;
     juce::Label tempoLabel;
     juce::Label timeSignatureLabel;
+    juce::Label voicingLabel;
     
     // Key Manager
     KeyManager keyManager;
