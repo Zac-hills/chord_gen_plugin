@@ -85,6 +85,18 @@ MainComponent::MainComponent() : keyboard(keyboardState, juce::MidiKeyboardCompo
     voicingLabel.setText("Voicing:", juce::dontSendNotification);
     addAndMakeVisible(voicingLabel);
     
+    // Add waveform combo box
+    waveformComboBox.addItem("Sine Wave", 1);
+    waveformComboBox.addItem("Sawtooth", 2);
+    waveformComboBox.addItem("Square Wave", 3);
+    waveformComboBox.addItem("Triangle Wave", 4);
+    waveformComboBox.setSelectedId(1);
+    waveformComboBox.onChange = [this] { updateWaveform(); };
+    addAndMakeVisible(waveformComboBox);
+    
+    waveformLabel.setText("Waveform:", juce::dontSendNotification);
+    addAndMakeVisible(waveformLabel);
+    
     scaleNotesLabel.setText("Scale Notes: ", juce::dontSendNotification);
     scaleNotesLabel.setFont(juce::Font(16.0f, juce::Font::bold));
     addAndMakeVisible(scaleNotesLabel);
@@ -356,6 +368,10 @@ void MainComponent::resized()
     voicingLabel.setBounds(voicingSection.removeFromTop(20));
     voicingComboBox.setBounds(voicingSection);
     
+    auto waveformSection = topSection.removeFromLeft(200).reduced(5);
+    waveformLabel.setBounds(waveformSection.removeFromTop(20));
+    waveformComboBox.setBounds(waveformSection);
+    
     bounds.removeFromTop(10);
     
     // Second row: Progression
@@ -534,6 +550,30 @@ void MainComponent::updateChordDuration()
     
     // Each chord lasts for the full measure
     samplesPerBeat = static_cast<int>(beatDuration * beatsPerMeasure * sampleRate);
+}
+
+void MainComponent::updateWaveform()
+{
+    WaveformType waveform = WaveformType::Sine;
+    
+    int selectedId = waveformComboBox.getSelectedId();
+    switch (selectedId)
+    {
+        case 1: waveform = WaveformType::Sine; break;
+        case 2: waveform = WaveformType::Sawtooth; break;
+        case 3: waveform = WaveformType::Square; break;
+        case 4: waveform = WaveformType::Triangle; break;
+        default: waveform = WaveformType::Sine; break;
+    }
+    
+    // Update all synth voices with the new waveform
+    for (int i = 0; i < synth.getNumVoices(); ++i)
+    {
+        if (auto* voice = dynamic_cast<SineWaveVoice*>(synth.getVoice(i)))
+        {
+            voice->setWaveform(waveform);
+        }
+    }
 }
 
 //==============================================================================

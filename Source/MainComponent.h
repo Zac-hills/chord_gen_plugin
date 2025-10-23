@@ -8,10 +8,24 @@
 class SineWaveSound;
 
 //==============================================================================
-// Simple Sine Wave Synthesizer Voice
+// Waveform types
+enum class WaveformType
+{
+    Sine,
+    Sawtooth,
+    Square,
+    Triangle
+};
+
+//==============================================================================
+// Synthesizer Voice with Multiple Waveforms
 class SineWaveVoice : public juce::SynthesiserVoice
 {
 public:
+    SineWaveVoice() : waveformType(WaveformType::Sine) {}
+    
+    void setWaveform(WaveformType type) { waveformType = type; }
+    
     bool canPlaySound(juce::SynthesiserSound* sound) override
     {
         return true; // Accept any sound for simplicity
@@ -52,7 +66,7 @@ public:
             {
                 while (--numSamples >= 0)
                 {
-                    auto currentSample = (float)(std::sin(currentAngle) * level * tailOff);
+                    auto currentSample = (float)(generateWaveform(currentAngle) * level * tailOff);
                     
                     for (auto i = outputBuffer.getNumChannels(); --i >= 0;)
                         outputBuffer.addSample(i, startSample, currentSample);
@@ -74,7 +88,7 @@ public:
             {
                 while (--numSamples >= 0)
                 {
-                    auto currentSample = (float)(std::sin(currentAngle) * level);
+                    auto currentSample = (float)(generateWaveform(currentAngle) * level);
                     
                     for (auto i = outputBuffer.getNumChannels(); --i >= 0;)
                         outputBuffer.addSample(i, startSample, currentSample);
@@ -85,8 +99,41 @@ public:
             }
         }
     }
-    
+
 private:
+    double generateWaveform(double angle)
+    {
+        // Normalize angle to 0-2π range
+        double normalizedAngle = std::fmod(angle, 2.0 * juce::MathConstants<double>::pi);
+        if (normalizedAngle < 0)
+            normalizedAngle += 2.0 * juce::MathConstants<double>::pi;
+        
+        switch (waveformType)
+        {
+            case WaveformType::Sine:
+                return std::sin(angle);
+                
+            case WaveformType::Sawtooth:
+                // Sawtooth: ramp from -1 to 1
+                return 2.0 * (normalizedAngle / (2.0 * juce::MathConstants<double>::pi)) - 1.0;
+                
+            case WaveformType::Square:
+                // Square: -1 or 1 based on angle
+                return (std::sin(angle) >= 0.0) ? 1.0 : -1.0;
+                
+            case WaveformType::Triangle:
+                // Triangle: folded sawtooth
+                {
+                    double t = normalizedAngle / (2.0 * juce::MathConstants<double>::pi);
+                    return 4.0 * std::abs(t - 0.5) - 1.0;
+                }
+                
+            default:
+                return std::sin(angle);
+        }
+    }
+    
+    WaveformType waveformType;
     double currentAngle = 0.0, angleDelta = 0.0, level = 0.0, tailOff = 0.0;
     double frequency = 0.0;
 };
@@ -159,6 +206,7 @@ private:
     juce::ComboBox chordTypeComboBox;
     juce::ComboBox timeSignatureComboBox;
     juce::ComboBox voicingComboBox;
+    juce::ComboBox waveformComboBox;
     juce::TextButton playButton;
     juce::TextButton stopButton;
     juce::ToggleButton loopButton;
@@ -174,6 +222,7 @@ private:
     juce::Label tempoLabel;
     juce::Label timeSignatureLabel;
     juce::Label voicingLabel;
+    juce::Label waveformLabel;
     
     // Key Manager
     KeyManager keyManager;
@@ -204,6 +253,7 @@ private:
     void updateDisplay();
     void updateTimeSignature();
     void updateChordDuration();
+    void updateWaveform();
     
     // MIDI Playback functions
     void playProgression();
