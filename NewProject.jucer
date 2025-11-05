@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<JUCERPROJECT id="BwsgLJ" name="NewProject" projectType="guiapp" useAppConfig="0"
-              addUsingNamespaceToJuceHeader="0" jucerFormatVersion="1">
-  <MAINGROUP id="JdDiot" name="NewProject">
+<JUCERPROJECT id="BwsgLJ" name="Alex Rome - Chord Builder" projectType="guiapp"
+              useAppConfig="0" addUsingNamespaceToJuceHeader="0" jucerFormatVersion="1">
+  <MAINGROUP id="JdDiot" name="Alex Rome - Chord Builder">
     <GROUP id="{933D8366-2699-92D9-6E20-F0E19612C8A6}" name="Source">
       <FILE id="Y9MoCf" name="Main.cpp" compile="1" resource="0" file="Source/Main.cpp"/>
       <FILE id="DPe0Ks" name="MainComponent.h" compile="0" resource="0" file="Source/MainComponent.h"/>
@@ -11,6 +11,10 @@
       <FILE id="KeyMgr" name="KeyManager.h" compile="0" resource="0" file="Source/KeyManager.h"/>
       <FILE id="KeyMgrCpp" name="KeyManager.cpp" compile="1" resource="0"
             file="Source/KeyManager.cpp"/>
+      <FILE id="ThemeMgr" name="ThemeManager.h" compile="0" resource="0"
+            file="Source/ThemeManager.h"/>
+      <FILE id="ThemeMgrCpp" name="ThemeManager.cpp" compile="1" resource="0"
+            file="Source/ThemeManager.cpp"/>
     </GROUP>
   </MAINGROUP>
   <MODULES>
@@ -58,17 +62,17 @@
                        osxCompatibility="10.11 SDK" osxArchitecture="x86_64,arm64" macOSDeploymentTarget="10.11"/>
       </CONFIGURATIONS>
       <MODULEPATHS>
-        <MODULEPATH id="juce_audio_basics" path="../../juce/juce-8.0.10-linux/JUCE/modules"/>
-        <MODULEPATH id="juce_audio_devices" path="../../juce/juce-8.0.10-linux/JUCE/modules"/>
-        <MODULEPATH id="juce_audio_formats" path="../../juce/juce-8.0.10-linux/JUCE/modules"/>
-        <MODULEPATH id="juce_audio_processors" path="../../juce/juce-8.0.10-linux/JUCE/modules"/>
-        <MODULEPATH id="juce_audio_utils" path="../../juce/juce-8.0.10-linux/JUCE/modules"/>
-        <MODULEPATH id="juce_core" path="../../juce/juce-8.0.10-linux/JUCE/modules"/>
-        <MODULEPATH id="juce_data_structures" path="../../juce/juce-8.0.10-linux/JUCE/modules"/>
-        <MODULEPATH id="juce_events" path="../../juce/juce-8.0.10-linux/JUCE/modules"/>
-        <MODULEPATH id="juce_graphics" path="../../juce/juce-8.0.10-linux/JUCE/modules"/>
-        <MODULEPATH id="juce_gui_basics" path="../../juce/juce-8.0.10-linux/JUCE/modules"/>
-        <MODULEPATH id="juce_gui_extra" path="../../juce/juce-8.0.10-linux/JUCE/modules"/>
+        <MODULEPATH id="juce_audio_basics" path="JuceLibraryCode"/>
+        <MODULEPATH id="juce_audio_devices" path="JuceLibraryCode"/>
+        <MODULEPATH id="juce_audio_formats" path="JuceLibraryCode"/>
+        <MODULEPATH id="juce_audio_processors" path="JuceLibraryCode"/>
+        <MODULEPATH id="juce_audio_utils" path="JuceLibraryCode"/>
+        <MODULEPATH id="juce_core" path="JuceLibraryCode"/>
+        <MODULEPATH id="juce_data_structures" path="JuceLibraryCode"/>
+        <MODULEPATH id="juce_events" path="JuceLibraryCode"/>
+        <MODULEPATH id="juce_graphics" path="JuceLibraryCode"/>
+        <MODULEPATH id="juce_gui_basics" path="JuceLibraryCode"/>
+        <MODULEPATH id="juce_gui_extra" path="JuceLibraryCode"/>
       </MODULEPATHS>
     </XCODE_MAC>
   </EXPORTFORMATS>

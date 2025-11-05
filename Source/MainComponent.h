@@ -2,6 +2,7 @@
 
 #include <JuceHeader.h>
 #include "KeyManager.h"
+#include "ThemeManager.h"  // Temporarily disabled
 
 //==============================================================================
 // Forward declaration
@@ -187,7 +188,7 @@ class MainComponent  : public juce::AudioAppComponent
 public:
     //==============================================================================
     MainComponent();
-    ~MainComponent() override;
+    ~MainComponent() noexcept override;
 
     //==============================================================================
     void prepareToPlay (int samplesPerBlockExpected, double sampleRate) override;
@@ -198,9 +199,17 @@ public:
     void paint (juce::Graphics& g) override;
     void resized() override;
 
+    //==============================================================================
+    void applyTheme();  // Temporarily disabled
+    // void updateTheme();  // Temporarily disabled
+
 private:
     //==============================================================================
+    ThemeManager themeManager;  // Temporarily disabled
     // UI Components
+    juce::GroupComponent songSetupGroup;
+    juce::GroupComponent refinementGroup;
+    juce::GroupComponent progressionBuilderGroup;
     juce::ComboBox keyComboBox;
     juce::ComboBox progressionComboBox;
     juce::ComboBox chordTypeComboBox;

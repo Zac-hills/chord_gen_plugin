@@ -3,18 +3,18 @@
 //==============================================================================
 MainComponent::MainComponent() : keyboard(keyboardState, juce::MidiKeyboardComponent::horizontalKeyboard)
 {
-    keyComboBox.addItem("C Major", 1);
-    keyComboBox.addItem("C# Major", 2);
-    keyComboBox.addItem("D Major", 3);
-    keyComboBox.addItem("D# Major", 4);
-    keyComboBox.addItem("E Major", 5);
-    keyComboBox.addItem("F Major", 6);
-    keyComboBox.addItem("F# Major", 7);
-    keyComboBox.addItem("G Major", 8);
-    keyComboBox.addItem("G# Major", 9);
-    keyComboBox.addItem("A Major", 10);
-    keyComboBox.addItem("A# Major", 11);
-    keyComboBox.addItem("B Major", 12);
+    keyComboBox.addItem("C", 1);
+    keyComboBox.addItem("C#", 2);
+    keyComboBox.addItem("D", 3);
+    keyComboBox.addItem("D#", 4);
+    keyComboBox.addItem("E", 5);
+    keyComboBox.addItem("F", 6);
+    keyComboBox.addItem("F#", 7);
+    keyComboBox.addItem("G", 8);
+    keyComboBox.addItem("G#", 9);
+    keyComboBox.addItem("A", 10);
+    keyComboBox.addItem("A#", 11);
+    keyComboBox.addItem("B", 12);
     
     keyComboBox.setSelectedId(1);
     keyComboBox.onChange = [this] { keySelectionChanged(); };
@@ -242,12 +242,83 @@ MainComponent::MainComponent() : keyboard(keyboardState, juce::MidiKeyboardCompo
             DBG("Audio device setup error: " << error);
         }
     }
+    themeManager.setTheme(ThemeManager::Theme::Default);  // Temporarily disabled
+    applyTheme();  // Temporarily disabled
 }
 
 MainComponent::~MainComponent()
 {
     shutdownAudio();
 }
+
+// Temporarily disabled - ThemeManager not yet in build
+void MainComponent::applyTheme() {
+    const auto& colors = themeManager.getColors();
+
+    // Set background
+    getLookAndFeel().setColour(juce::ResizableWindow::backgroundColourId, colors.backgroundMain);
+
+    // Loop through all child components
+    for (auto* child : getChildren())
+    {
+        // Apply to ComboBoxes
+        if (auto* comboBox = dynamic_cast<juce::ComboBox*>(child))
+        {
+            comboBox->setColour(juce::ComboBox::backgroundColourId, colors.comboBoxBackground);
+            comboBox->setColour(juce::ComboBox::textColourId, colors.comboBoxText);
+            comboBox->setColour(juce::ComboBox::outlineColourId, colors.comboBoxOutline);
+            comboBox->setColour(juce::ComboBox::arrowColourId, colors.comboBoxText);
+        }
+        
+        // Apply to TextButtons
+        else if (auto* button = dynamic_cast<juce::TextButton*>(child))
+        {
+            button->setColour(juce::TextButton::buttonColourId, colors.buttonBackground);
+            button->setColour(juce::TextButton::textColourOffId, colors.buttonText);
+            button->setColour(juce::TextButton::textColourOnId, colors.buttonText);
+            button->setColour(juce::TextButton::buttonOnColourId, colors.buttonHighlight);
+        }
+        
+        // Apply to ToggleButtons
+        else if (auto* toggleButton = dynamic_cast<juce::ToggleButton*>(child))
+        {
+            toggleButton->setColour(juce::ToggleButton::textColourId, colors.textPrimary);
+            toggleButton->setColour(juce::ToggleButton::tickColourId, colors.accentPrimary);
+            toggleButton->setColour(juce::ToggleButton::tickDisabledColourId, colors.textSecondary);
+        }
+        
+        // Apply to Labels
+        else if (auto* label = dynamic_cast<juce::Label*>(child))
+        {
+            label->setColour(juce::Label::textColourId, colors.labelText);
+            label->setColour(juce::Label::backgroundColourId, juce::Colours::transparentBlack);
+        }
+        
+        // Apply to Sliders
+        else if (auto* slider = dynamic_cast<juce::Slider*>(child))
+        {
+            slider->setColour(juce::Slider::thumbColourId, colors.accentPrimary);
+            slider->setColour(juce::Slider::trackColourId, colors.accentSecondary);
+            slider->setColour(juce::Slider::backgroundColourId, colors.backgroundControl);
+            slider->setColour(juce::Slider::textBoxTextColourId, colors.textPrimary);
+            slider->setColour(juce::Slider::textBoxBackgroundColourId, colors.backgroundControl);
+            slider->setColour(juce::Slider::textBoxOutlineColourId, colors.border);
+        }
+        
+        // Apply to MidiKeyboardComponent
+        else if (auto* keyboard = dynamic_cast<juce::MidiKeyboardComponent*>(child))
+        {
+            keyboard->setColour(juce::MidiKeyboardComponent::whiteNoteColourId, colors.backgroundSecondary);
+            keyboard->setColour(juce::MidiKeyboardComponent::blackNoteColourId, colors.backgroundMain);
+            keyboard->setColour(juce::MidiKeyboardComponent::keySeparatorLineColourId, colors.border);
+            keyboard->setColour(juce::MidiKeyboardComponent::mouseOverKeyOverlayColourId, colors.accentPrimary.withAlpha(0.3f));
+            keyboard->setColour(juce::MidiKeyboardComponent::keyDownOverlayColourId, colors.accentPrimary.withAlpha(0.6f));
+        }
+    }
+    
+    repaint();
+}
+
 
 //==============================================================================
 void MainComponent::prepareToPlay (int samplesPerBlockExpected, double sampleRate)
@@ -346,12 +417,33 @@ void MainComponent::releaseResources()
 
 void MainComponent::paint(juce::Graphics& g)
 {
+    const auto& colors = themeManager.getColors();
     g.fillAll(getLookAndFeel().findColour(juce::ResizableWindow::backgroundColourId));
-    
-    g.setColour(juce::Colours::white);
-    g.setFont(juce::Font(20.0f, juce::Font::bold));
-    g.drawText("Key Manager - Chord Generator", getLocalBounds().removeFromTop(50), 
-               juce::Justification::centred, true);
+    // draw border around window
+    g.setColour(colors.border);
+    g.drawRect(getLocalBounds(), 4);
+    // create banner with text and image in asset folder
+    // draw filled rectangle as banner background
+    g.setColour(colors.textPrimary);
+    g.fillRect(getLocalBounds().removeFromTop(60));
+    g.setColour(colors.textSecondary);
+    g.setFont(juce::Font(30.0f, juce::Font::bold));
+    g.drawText("Chord Builder", getLocalBounds().removeFromTop(50), 
+               juce::Justification::topLeft, true);
+    // Load and draw logo
+    auto logoFile = juce::File::getCurrentWorkingDirectory()
+                        .getChildFile("assets")
+                        .getChildFile("logo.jpg");
+        
+    if (logoFile.existsAsFile())
+    {
+        auto logoImage = juce::ImageCache::getFromFile(logoFile);
+        if (logoImage.isValid())
+        {
+            auto logoBounds = getLocalBounds().removeFromTop(50).removeFromRight(100).reduced(5);
+            g.drawImage(logoImage, logoBounds.toFloat(), juce::RectanglePlacement::centred);
+        }
+    }
 }
 
 void MainComponent::resized()
@@ -409,8 +501,12 @@ void MainComponent::resized()
     progressionLabel.setBounds(bounds.removeFromTop(30));
     bounds.removeFromTop(20);
     
-    // MIDI keyboard at the bottom
-    keyboard.setBounds(bounds.removeFromBottom(80));
+    // MIDI keyboard at the bottom with padding
+    auto keyboardArea = bounds.removeFromBottom(80);
+    keyboard.setBounds(keyboardArea.withTrimmedLeft(50)    // 30px left padding
+                               .withTrimmedRight(250)    // 30px right padding
+                               .withTrimmedTop(5)       // 5px top padding
+                               .withTrimmedBottom(50));
 }
 
 void MainComponent::keySelectionChanged()
