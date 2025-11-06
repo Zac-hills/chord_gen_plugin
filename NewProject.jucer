@@ -8,6 +8,8 @@
       <FILE id="DPe0Ks" name="MainComponent.h" compile="0" resource="0" file="Source/MainComponent.h"/>
       <FILE id="CeHQBg" name="MainComponent.cpp" compile="1" resource="0"
             file="Source/MainComponent.cpp"/>
+      <FILE id="EmotionWhl" name="EmotionWheel.h" compile="0" resource="0"
+            file="Source/EmotionWheel.h"/>
       <FILE id="KeyMgr" name="KeyManager.h" compile="0" resource="0" file="Source/KeyManager.h"/>
       <FILE id="KeyMgrCpp" name="KeyManager.cpp" compile="1" resource="0"
             file="Source/KeyManager.cpp"/>

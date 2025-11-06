@@ -533,4 +533,5 @@ dependencies: /Users/zac/Programming/chord_gen_plugin/Source/Main.cpp \
   /Users/zac/Programming/chord_gen_plugin/JuceLibraryCode/modules/juce_audio_utils/audio_cd/juce_AudioCDReader.h \
   /Users/zac/Programming/chord_gen_plugin/Source/MainComponent.h \
   /Users/zac/Programming/chord_gen_plugin/Source/KeyManager.h \
-  /Users/zac/Programming/chord_gen_plugin/Source/ThemeManager.h
+  /Users/zac/Programming/chord_gen_plugin/Source/ThemeManager.h \
+  /Users/zac/Programming/chord_gen_plugin/Source/EmotionWheel.h

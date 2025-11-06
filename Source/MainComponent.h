@@ -3,6 +3,7 @@
 #include <JuceHeader.h>
 #include "KeyManager.h"
 #include "ThemeManager.h"  // Temporarily disabled
+#include "EmotionWheel.h"
 
 //==============================================================================
 // Custom LookAndFeel for circular button
@@ -233,8 +234,10 @@ private:
     juce::GroupComponent songSetupGroup;
     juce::GroupComponent refinementGroup;
     juce::GroupComponent progressionBuilderGroup;
+    juce::GroupComponent emotionWheelGroup;
     juce::ComboBox keyComboBox;
     juce::ComboBox progressionComboBox;
+    juce::ComboBox progressionsDropdown;  // Dummy dropdown for progressions
     juce::ComboBox chordTypeComboBox;
     juce::ComboBox timeSignatureComboBox;
     juce::ComboBox voicingComboBox;
@@ -243,6 +246,14 @@ private:
     juce::ToggleButton loopButton;
     juce::Slider tempoSlider;
     juce::TextButton audioSettingsButton;
+    
+    // Emotion Wheel components
+    juce::ComboBox chordSelectorComboBox;
+    juce::ComboBox emotionComboBox;
+    juce::TextButton applyEmotionButton;
+    juce::Label chordSelectorLabel;
+    juce::Label emotionLabel;
+    juce::Label emotionDescriptionLabel;
     
     // Chord progression builder components
     std::array<juce::TextButton, 7> chordButtons;  // Buttons for scale degrees I-VII
@@ -260,6 +271,9 @@ private:
     
     // Key Manager
     KeyManager keyManager;
+    
+    // Emotion Wheel
+    EmotionWheel emotionWheel;
     
     // Custom LookAndFeel for circular root button
     CircularButtonLookAndFeel circularButtonLookAndFeel;
@@ -283,6 +297,7 @@ private:
     std::vector<std::vector<int>> currentProgression;
     std::vector<int> currentChordNotes;
     std::vector<int> customProgressionDegrees;  // Stores the scale degrees (1-7) for custom progression
+    std::vector<EmotionWheel::Emotion> customProgressionEmotions;  // Stores applied emotions (parallel to customProgressionDegrees)
 
     
     //==============================================================================
@@ -301,6 +316,12 @@ private:
     void updateCustomProgressionDisplay();
     void playCustomProgression();
     void updateChordButtonLabels();
+    
+    // Emotion Wheel functions
+    void updateChordSelector();
+    void updateEmotionComboBox();
+    void applyEmotionToChord();
+    void updateEmotionDescription();
 
     
     // MIDI Playback functions

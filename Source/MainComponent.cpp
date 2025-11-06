@@ -20,6 +20,11 @@ MainComponent::MainComponent() : keyboard(keyboardState, juce::MidiKeyboardCompo
     keyComboBox.onChange = [this] { keySelectionChanged(); };
     addAndMakeVisible(keyComboBox);
     
+    // Setup progressions dropdown (dummy)
+    progressionsDropdown.addItem("Progressions", 1);
+    progressionsDropdown.setSelectedId(1);
+    addAndMakeVisible(progressionsDropdown);
+    
     // Setup chord progression builder
     progressionBuilderLabel.setText("Build Your Progression:", juce::dontSendNotification);
     progressionBuilderLabel.setFont(juce::Font(14.0f, juce::Font::bold));
@@ -50,18 +55,18 @@ MainComponent::MainComponent() : keyboard(keyboardState, juce::MidiKeyboardCompo
     addAndMakeVisible(customProgressionDisplayLabel);
     
     // Add chord type combo box
-    chordTypeComboBox.addItem("Triads", 1);
-    chordTypeComboBox.addItem("Seventh Chords", 2);
-    chordTypeComboBox.setSelectedId(1);
-    chordTypeComboBox.onChange = [this] { 
-        updateDisplay();
-        // If currently playing, reload the progression with new chord type
-        if (isPlaying)
-        {
-            playProgression();
-        }
-    };
-    addAndMakeVisible(chordTypeComboBox);
+    // chordTypeComboBox.addItem("Triads", 1);
+    // chordTypeComboBox.addItem("Seventh Chords", 2);
+    // chordTypeComboBox.setSelectedId(1);
+    // chordTypeComboBox.onChange = [this] { 
+    //     updateDisplay();
+    //     // If currently playing, reload the progression with new chord type
+    //     if (isPlaying)
+    //     {
+    //         playProgression();
+    //     }
+    // };
+    // addAndMakeVisible(chordTypeComboBox);
     
     // Add time signature combo box
     timeSignatureComboBox.addItem("4/4", 1);
@@ -84,21 +89,21 @@ MainComponent::MainComponent() : keyboard(keyboardState, juce::MidiKeyboardCompo
     addAndMakeVisible(timeSignatureLabel);
     
     // Add voicing combo box
-    voicingComboBox.addItem("Close Position", 1);
-    voicingComboBox.addItem("Open Position", 2);
-    voicingComboBox.addItem("Drop 2", 3);
-    voicingComboBox.addItem("Drop 3", 4);
-    voicingComboBox.addItem("1st Inversion", 5);
-    voicingComboBox.addItem("2nd Inversion", 6);
-    voicingComboBox.addItem("Spread", 7);
-    voicingComboBox.setSelectedId(1);
-    voicingComboBox.onChange = [this] { 
-        if (isPlaying)
-        {
-            playProgression();
-        }
-    };
-    addAndMakeVisible(voicingComboBox);
+   // voicingComboBox.addItem("Close Position", 1);
+   // voicingComboBox.addItem("Open Position", 2);
+   // voicingComboBox.addItem("Drop 2", 3);
+   // voicingComboBox.addItem("Drop 3", 4);
+   // voicingComboBox.addItem("1st Inversion", 5);
+   // voicingComboBox.addItem("2nd Inversion", 6);
+   // voicingComboBox.addItem("Spread", 7);
+   // voicingComboBox.setSelectedId(1);
+   // voicingComboBox.onChange = [this] { 
+   //     if (isPlaying)
+   //     {
+   //         playProgression();
+   //     }
+   // };
+   // addAndMakeVisible(voicingComboBox);
     
     voicingLabel.setText("Voicing:", juce::dontSendNotification);
     addAndMakeVisible(voicingLabel);
@@ -148,6 +153,42 @@ MainComponent::MainComponent() : keyboard(keyboardState, juce::MidiKeyboardCompo
     
     tempoLabel.setText("Tempo (BPM):", juce::dontSendNotification);
     addAndMakeVisible(tempoLabel);
+    
+    // Setup Emotion Wheel UI
+    chordSelectorLabel.setText("Select Chord:", juce::dontSendNotification);
+    addAndMakeVisible(chordSelectorLabel);
+    
+    chordSelectorComboBox.onChange = [this] { updateEmotionComboBox(); };
+    addAndMakeVisible(chordSelectorComboBox);
+    
+    emotionLabel.setText("Apply Emotion:", juce::dontSendNotification);
+    addAndMakeVisible(emotionLabel);
+    
+    emotionComboBox.onChange = [this] { updateEmotionDescription(); };
+    addAndMakeVisible(emotionComboBox);
+    
+    emotionDescriptionLabel.setText("", juce::dontSendNotification);
+    emotionDescriptionLabel.setFont(juce::Font(12.0f, juce::Font::italic));
+    emotionDescriptionLabel.setJustificationType(juce::Justification::centred);
+    addAndMakeVisible(emotionDescriptionLabel);
+    
+    applyEmotionButton.setButtonText("Apply");
+    applyEmotionButton.onClick = [this] { applyEmotionToChord(); };
+    addAndMakeVisible(applyEmotionButton);
+    
+    emotionWheelGroup.setText("Emotion Wheel");
+    emotionWheelGroup.setTextLabelPosition(juce::Justification::centredTop);
+    addAndMakeVisible(emotionWheelGroup);
+    
+    // Setup group components
+    progressionBuilderGroup.setText("Chord Progression Builder");
+    progressionBuilderGroup.setTextLabelPosition(juce::Justification::centredTop);
+    addAndMakeVisible(progressionBuilderGroup);
+    
+    refinementGroup.setText("Refinement");
+    refinementGroup.setTextLabelPosition(juce::Justification::centredTop);
+    addAndMakeVisible(refinementGroup);
+
     
     // Audio settings button in title bar
     audioSettingsButton.setButtonText("...");  // Three dots for settings menu
@@ -308,11 +349,18 @@ void MainComponent::applyTheme() {
         // Apply to MidiKeyboardComponent
         else if (auto* keyboard = dynamic_cast<juce::MidiKeyboardComponent*>(child))
         {
-            keyboard->setColour(juce::MidiKeyboardComponent::whiteNoteColourId, colors.backgroundSecondary);
-            keyboard->setColour(juce::MidiKeyboardComponent::blackNoteColourId, colors.backgroundMain);
+            keyboard->setColour(juce::MidiKeyboardComponent::whiteNoteColourId, colors.backgroundMain);
+            keyboard->setColour(juce::MidiKeyboardComponent::blackNoteColourId, colors.backgroundSecondary);
             keyboard->setColour(juce::MidiKeyboardComponent::keySeparatorLineColourId, colors.border);
             keyboard->setColour(juce::MidiKeyboardComponent::mouseOverKeyOverlayColourId, colors.accentPrimary.withAlpha(0.3f));
             keyboard->setColour(juce::MidiKeyboardComponent::keyDownOverlayColourId, colors.accentPrimary.withAlpha(0.6f));
+        }
+        
+        // Apply to GroupComponent
+        else if (auto* group = dynamic_cast<juce::GroupComponent*>(child))
+        {
+            group->setColour(juce::GroupComponent::textColourId, colors.textPrimary);
+            group->setColour(juce::GroupComponent::outlineColourId, colors.border);
         }
     }
     
@@ -436,19 +484,19 @@ void MainComponent::paint(juce::Graphics& g)
     g.drawRect(getLocalBounds(), 4);
     
     // Load and draw logo (below title bar)
-    auto logoFile = juce::File::getCurrentWorkingDirectory()
-                        .getChildFile("assets")
-                        .getChildFile("logo.jpg");
+   //auto logoFile = juce::File::getCurrentWorkingDirectory()
+   //                    .getChildFile("assets")
+   //                    .getChildFile("logo.jpg");
         
-    if (logoFile.existsAsFile())
-    {
-        auto logoImage = juce::ImageCache::getFromFile(logoFile);
-        if (logoImage.isValid())
-        {
-            auto logoBounds = getLocalBounds().removeFromTop(60).removeFromRight(100).reduced(5);
-            g.drawImage(logoImage, logoBounds.toFloat(), juce::RectanglePlacement::centred);
-        }
-    }
+    //if (logoFile.existsAsFile())
+    //{
+    //    auto logoImage = juce::ImageCache::getFromFile(logoFile);
+    //    if (logoImage.isValid())
+    //    {
+    //        auto logoBounds = getLocalBounds().removeFromTop(60).removeFromRight(100).reduced(5);
+    //        g.drawImage(logoImage, logoBounds.toFloat(), juce::RectanglePlacement::centred);
+    //    }
+    //}
 }
 
 void MainComponent::resized()
@@ -465,27 +513,31 @@ void MainComponent::resized()
     // Add some spacing after title bar
     bounds.removeFromTop(30);
     
-    // First row: Key and Chord Type
-    auto topSection = bounds.removeFromTop(50);
-    keyComboBox.setBounds(topSection.removeFromLeft(200).reduced(10));
-    chordTypeComboBox.setBounds(topSection.removeFromLeft(200).reduced(10));
+    // Add outer padding to prevent borders from touching window edges
+    bounds.reduce(10, 0);
     
-    auto voicingSection = topSection.removeFromLeft(200).reduced(5);
-    voicingLabel.setBounds(voicingSection.removeFromTop(20));
-    voicingComboBox.setBounds(voicingSection);
+    // Create two columns: left for builder, right for refinement
+    auto leftColumn = bounds.removeFromLeft(getWidth() / 2 - 10);  // Account for outer padding
+    leftColumn.removeFromRight(5);  // Gap between columns
+    auto rightColumn = bounds;
+    rightColumn.removeFromLeft(5);  // Gap between columns
     
-    auto waveformSection = topSection.removeFromLeft(200).reduced(5);
-    waveformLabel.setBounds(waveformSection.removeFromTop(20));
-    waveformComboBox.setBounds(waveformSection);
+    // Left column: Progression Builder Group
+    auto builderGroupBounds = leftColumn.removeFromTop(350);
+    progressionBuilderGroup.setBounds(builderGroupBounds);
     
-    bounds.removeFromTop(10);
+    auto builderContent = builderGroupBounds.reduced(15, 25);  // Reduce for group border and title
     
-    // Chord progression builder section - increased height for circular layout
-    auto builderSection = bounds.removeFromTop(200);
-    progressionBuilderLabel.setBounds(builderSection.removeFromTop(25).reduced(10));
+    // Key and Progressions at the top of builder group - far left and far right
+    auto keyProgressionsRow = builderContent.removeFromTop(35);
+    keyComboBox.setBounds(keyProgressionsRow.removeFromLeft(150).reduced(5));
+    keyProgressionsRow.removeFromRight(0);  // Skip middle space
+    progressionsDropdown.setBounds(keyProgressionsRow.removeFromRight(150).reduced(5));
+    
+    builderContent.removeFromTop(20);  // Increased spacing
     
     // Chord buttons in circular layout with root (I) in center
-    auto chordButtonArea = builderSection.removeFromTop(150);
+    auto chordButtonArea = builderContent.removeFromTop(150);
     int centerX = chordButtonArea.getCentreX();
     int centerY = chordButtonArea.getCentreY();
     int radius = 70;  // Distance from center
@@ -507,40 +559,97 @@ void MainComponent::resized()
         chordButtons[i].setBounds(x, y, buttonSize, buttonSize);
     }
     
-    // Control buttons for progression
-    auto progressionControlRow = builderSection.removeFromTop(40).reduced(10);
+    builderContent.removeFromTop(20);  // Increased spacing
+    
+    // Control buttons for progression - far left and far right
+    auto progressionControlRow = builderContent.removeFromTop(35);
     clearProgressionButton.setBounds(progressionControlRow.removeFromLeft(100).reduced(5));
-    removeLastChordButton.setBounds(progressionControlRow.removeFromLeft(120).reduced(5));
+    progressionControlRow.removeFromRight(0);  // Skip middle space
+    removeLastChordButton.setBounds(progressionControlRow.removeFromRight(120).reduced(5));
     
-    // Custom progression display
-    customProgressionDisplayLabel.setBounds(builderSection.removeFromTop(30).reduced(10));
+    builderContent.removeFromTop(10);
+    
+    // Custom progression display (detailed chord names)
+    progressionLabel.setBounds(builderContent.removeFromTop(30).reduced(5));
+    
+    // Right column: Refinement Group
+    auto refinementGroupBounds = rightColumn.removeFromTop(350);
+    refinementGroup.setBounds(refinementGroupBounds);
+    
+    auto refinementContent = refinementGroupBounds.reduced(15, 25);  // Reduce for group border and title
+    
+    // Stack components vertically in refinement group
+    // Tempo
+    auto tempoRow = refinementContent.removeFromTop(55);
+    tempoLabel.setBounds(tempoRow.removeFromTop(20).reduced(5, 0));
+    tempoSlider.setBounds(tempoRow.reduced(5, 0));
+    
+    refinementContent.removeFromTop(5);
+    
+    // Time Signature
+    auto timeSignatureRow = refinementContent.removeFromTop(55);
+    timeSignatureLabel.setBounds(timeSignatureRow.removeFromTop(20).reduced(5, 0));
+    timeSignatureComboBox.setBounds(timeSignatureRow.reduced(5, 0));
+    
+    refinementContent.removeFromTop(5);
+    
+    // Voicing
+    auto voicingRow = refinementContent.removeFromTop(55);
+    voicingLabel.setBounds(voicingRow.removeFromTop(20).reduced(5, 0));
+    voicingComboBox.setBounds(voicingRow.reduced(5, 0));
+    
+    refinementContent.removeFromTop(5);
+    
+    // Waveform
+    auto waveformRow = refinementContent.removeFromTop(55);
+    waveformLabel.setBounds(waveformRow.removeFromTop(20).reduced(5, 0));
+    waveformComboBox.setBounds(waveformRow.reduced(5, 0));
+    
+    // Back to full width for remaining components
+    bounds = getLocalBounds();
+    bounds.removeFromTop(30 + 30 + 350 + 20);  // Skip title, spacing, groups, and gap
+    bounds.reduce(10, 0);  // Add outer padding
+    
+    // Emotion Wheel section
+    auto emotionWheelSection = bounds.removeFromTop(140);  // Increased from 120 to 140
+    emotionWheelGroup.setBounds(emotionWheelSection);
+    
+    auto emotionContent = emotionWheelSection.reduced(15, 25);  // Reduce for group border and title
+    
+    // First row: Chord selector
+    auto chordSelectorRow = emotionContent.removeFromTop(30);
+    chordSelectorLabel.setBounds(chordSelectorRow.removeFromLeft(100));
+    chordSelectorComboBox.setBounds(chordSelectorRow.removeFromLeft(200).reduced(5, 0));
+    
+    emotionContent.removeFromTop(5);  // Padding below chord selector
+    
+    // Second row: Emotion selector
+    auto emotionRow = emotionContent.removeFromTop(30);
+    emotionLabel.setBounds(emotionRow.removeFromLeft(100));
+    emotionComboBox.setBounds(emotionRow.removeFromLeft(300).reduced(5, 0));
+    applyEmotionButton.setBounds(emotionRow.removeFromLeft(100).reduced(10, 0));
+    
+    // Third row: Description (increased height)
+    emotionDescriptionLabel.setBounds(emotionContent.removeFromTop(40));
     
     bounds.removeFromTop(20);
     
-    // Control buttons and tempo
-    auto controlSection = bounds.removeFromTop(50);
-    playStopButton.setBounds(controlSection.removeFromLeft(80).reduced(5));
-    loopButton.setBounds(controlSection.removeFromLeft(80).reduced(5));
+    // MIDI keyboard at the bottom with play buttons to the right
+    auto keyboardArea = bounds.removeFromBottom(160);  // Doubled from 80 to 160
     
-    auto tempoSection = controlSection.removeFromLeft(200).reduced(5);
-    tempoLabel.setBounds(tempoSection.removeFromTop(20));
-    tempoSlider.setBounds(tempoSection);
+    // Reserve space on the right for play controls
+    auto playControlArea = keyboardArea.removeFromRight(180);
     
-    auto timeSignatureSection = controlSection.removeFromLeft(150).reduced(5);
-    timeSignatureLabel.setBounds(timeSignatureSection.removeFromTop(20));
-    timeSignatureComboBox.setBounds(timeSignatureSection);
+    // Position play/stop and loop buttons vertically stacked on the right
+    playControlArea.removeFromTop(10);  // Top padding
+    playStopButton.setBounds(playControlArea.removeFromTop(30).reduced(10, 0));
+    loopButton.setBounds(playControlArea.removeFromTop(30).reduced(10, 0));
     
-    bounds.removeFromTop(20);
-    
-    progressionLabel.setBounds(bounds.removeFromTop(30));
-    bounds.removeFromTop(20);
-    
-    // MIDI keyboard at the bottom with padding
-    auto keyboardArea = bounds.removeFromBottom(80);
-    keyboard.setBounds(keyboardArea.withTrimmedLeft(50)    // 30px left padding
-                               .withTrimmedRight(250)    // 30px right padding
-                               .withTrimmedTop(5)       // 5px top padding
-                               .withTrimmedBottom(50));
+    // Keyboard takes the remaining space
+    keyboard.setBounds(keyboardArea.withTrimmedLeft(50)    // Left padding
+                               .withTrimmedRight(20)       // Small right padding
+                               .withTrimmedTop(5)          // Top padding
+                               .withTrimmedBottom(50));    // Bottom padding
 }
 
 void MainComponent::keySelectionChanged()
@@ -678,16 +787,46 @@ void MainComponent::playProgression()
         
         // Build progression from scale degrees
         currentProgression.clear();
-        for (int degree : customProgressionDegrees)
+        for (int i = 0; i < customProgressionDegrees.size(); ++i)
         {
+            int degree = customProgressionDegrees[i];
             auto scaleDegree = static_cast<KeyManager::ScaleDegree>(degree);
             
             // Generate chord based on type
             std::vector<int> chord;
-            if (useSevenths)
-                chord = keyManager.generateSeventh(scaleDegree);
+            
+            // Check if this chord has an emotion applied
+            if (i < customProgressionEmotions.size())
+            {
+                auto emotion = customProgressionEmotions[i];
+                
+                // Get the root note for this scale degree
+                auto scaleNotes = keyManager.getScaleNotes();
+                if (degree - 1 < scaleNotes.size())
+                {
+                    // Scale notes are 0-11 (pitch classes), so add base octave (60 = middle C)
+                    int rootNote = 60 + scaleNotes[degree - 1];
+                    
+                    // Apply emotion to get chord notes
+                    chord = emotionWheel.applyEmotion(rootNote, emotion);
+                }
+                else
+                {
+                    // Fallback to regular chord generation
+                    if (useSevenths)
+                        chord = keyManager.generateSeventh(scaleDegree);
+                    else
+                        chord = keyManager.generateTriad(scaleDegree);
+                }
+            }
             else
-                chord = keyManager.generateTriad(scaleDegree);
+            {
+                // No emotion applied, use regular chord generation
+                if (useSevenths)
+                    chord = keyManager.generateSeventh(scaleDegree);
+                else
+                    chord = keyManager.generateTriad(scaleDegree);
+            }
             
             // Apply voicing
             chord = keyManager.applyVoicing(chord, voicing);
@@ -828,12 +967,15 @@ void MainComponent::addChordToProgression(int scaleDegree)
 {
     customProgressionDegrees.push_back(scaleDegree);
     updateCustomProgressionDisplay();
+    updateChordSelector();  // Update emotion wheel UI
 }
 
 void MainComponent::clearCustomProgression()
 {
     customProgressionDegrees.clear();
+    customProgressionEmotions.clear();  // Clear emotions too
     updateCustomProgressionDisplay();
+    updateChordSelector();  // Update emotion wheel UI
     
     // Stop playback if currently playing
     if (isPlaying)
@@ -847,7 +989,10 @@ void MainComponent::removeLastChordFromProgression()
     if (!customProgressionDegrees.empty())
     {
         customProgressionDegrees.pop_back();
+        if (!customProgressionEmotions.empty())
+            customProgressionEmotions.pop_back();
         updateCustomProgressionDisplay();
+        updateChordSelector();  // Update emotion wheel UI
     }
 }
 
@@ -855,27 +1000,11 @@ void MainComponent::updateCustomProgressionDisplay()
 {
     if (customProgressionDegrees.empty())
     {
-        customProgressionDisplayLabel.setText("Progression: (empty)", juce::dontSendNotification);
         progressionLabel.setText("Progression: Build a progression above", juce::dontSendNotification);
         return;
     }
     
-    // Build display string with roman numerals
-    const juce::StringArray romanNumerals = { "I", "II", "III", "IV", "V", "VI", "VII" };
-    juce::String progressionText = "Progression: ";
-    
-    for (int i = 0; i < customProgressionDegrees.size(); ++i)
-    {
-        int degree = customProgressionDegrees[i];
-        progressionText += romanNumerals[degree - 1];
-        
-        if (i < customProgressionDegrees.size() - 1)
-            progressionText += " - ";
-    }
-    
-    customProgressionDisplayLabel.setText(progressionText, juce::dontSendNotification);
-    
-    // Also update the detailed progression label with chord names
+    // Build detailed progression label with chord names
     bool useSevenths = chordTypeComboBox.getSelectedId() == 2;
     juce::String detailedText = "Progression: ";
     
@@ -909,3 +1038,220 @@ void MainComponent::updateChordButtonLabels()
         }
     }
 }
+
+//==============================================================================
+// Emotion Wheel Methods
+
+void MainComponent::updateChordSelector()
+{
+    chordSelectorComboBox.clear();
+    
+    if (customProgressionDegrees.empty())
+    {
+        chordSelectorComboBox.setEnabled(false);
+        emotionComboBox.setEnabled(false);
+        applyEmotionButton.setEnabled(false);
+        emotionDescriptionLabel.setText("Build a progression first", juce::dontSendNotification);
+        return;
+    }
+    
+    chordSelectorComboBox.setEnabled(true);
+    
+    // Populate chord selector with progression chords
+    const juce::StringArray romanNumerals = { "I", "II", "III", "IV", "V", "VI", "VII" };
+    bool useSevenths = chordTypeComboBox.getSelectedId() == 2;
+    
+    for (int i = 0; i < customProgressionDegrees.size(); ++i)
+    {
+        int degree = customProgressionDegrees[i];
+        auto scaleDegree = static_cast<KeyManager::ScaleDegree>(degree);
+        auto chordType = useSevenths ? keyManager.analyzeSeventh(scaleDegree) : keyManager.analyzeTriad(scaleDegree);
+        std::string chordName = keyManager.getChordName(scaleDegree, chordType);
+        
+        juce::String itemText = juce::String(i + 1) + ". " + juce::String(chordName);
+        chordSelectorComboBox.addItem(itemText, i + 1);
+    }
+    
+    if (chordSelectorComboBox.getNumItems() > 0)
+    {
+        chordSelectorComboBox.setSelectedId(1);
+        updateEmotionComboBox();
+    }
+}
+
+void MainComponent::updateEmotionComboBox()
+{
+    emotionComboBox.clear();
+    
+    int selectedChordIndex = chordSelectorComboBox.getSelectedId() - 1;
+    if (selectedChordIndex < 0 || selectedChordIndex >= customProgressionDegrees.size())
+    {
+        emotionComboBox.setEnabled(false);
+        applyEmotionButton.setEnabled(false);
+        return;
+    }
+    
+    // Determine if the selected chord is major or minor
+    int degree = customProgressionDegrees[selectedChordIndex];
+    auto scaleDegree = static_cast<KeyManager::ScaleDegree>(degree);
+    bool useSevenths = chordTypeComboBox.getSelectedId() == 2;
+    auto chordType = useSevenths ? keyManager.analyzeSeventh(scaleDegree) : keyManager.analyzeTriad(scaleDegree);
+    
+    // Determine tonality based on chord type
+    EmotionWheel::Tonality tonality = EmotionWheel::Tonality::Major;
+    
+    if (useSevenths)
+    {
+        if (chordType == KeyManager::ChordType::Minor7 ||
+            chordType == KeyManager::ChordType::Minor9 ||
+            chordType == KeyManager::ChordType::HalfDiminished7 ||
+            chordType == KeyManager::ChordType::Diminished7)
+        {
+            tonality = EmotionWheel::Tonality::Minor;
+        }
+    }
+    else
+    {
+        if (chordType == KeyManager::ChordType::Minor ||
+            chordType == KeyManager::ChordType::Diminished)
+        {
+            tonality = EmotionWheel::Tonality::Minor;
+        }
+    }
+    
+    // Get emotions for this tonality
+    auto emotions = emotionWheel.getEmotionsByTonality(tonality);
+    
+    for (size_t i = 0; i < emotions.size(); ++i)
+    {
+        auto emotion = emotions[i];
+        juce::String emotionName = EmotionWheel::getEmotionName(emotion);
+        emotionComboBox.addItem(emotionName, static_cast<int>(i + 1));
+    }
+    
+    emotionComboBox.setEnabled(true);
+    applyEmotionButton.setEnabled(true);
+    
+    if (emotionComboBox.getNumItems() > 0)
+    {
+        emotionComboBox.setSelectedId(1);
+        updateEmotionDescription();
+    }
+}
+
+void MainComponent::updateEmotionDescription()
+{
+    int selectedChordIndex = chordSelectorComboBox.getSelectedId() - 1;
+    if (selectedChordIndex < 0 || selectedChordIndex >= customProgressionDegrees.size())
+    {
+        emotionDescriptionLabel.setText("", juce::dontSendNotification);
+        return;
+    }
+    
+    int selectedEmotionIndex = emotionComboBox.getSelectedId() - 1;
+    if (selectedEmotionIndex < 0)
+    {
+        emotionDescriptionLabel.setText("", juce::dontSendNotification);
+        return;
+    }
+    
+    // Get the tonality to find the right emotion
+    int degree = customProgressionDegrees[selectedChordIndex];
+    auto scaleDegree = static_cast<KeyManager::ScaleDegree>(degree);
+    bool useSevenths = chordTypeComboBox.getSelectedId() == 2;
+    auto chordType = useSevenths ? keyManager.analyzeSeventh(scaleDegree) : keyManager.analyzeTriad(scaleDegree);
+    
+    EmotionWheel::Tonality tonality = EmotionWheel::Tonality::Major;
+    if (useSevenths)
+    {
+        if (chordType == KeyManager::ChordType::Minor7 ||
+            chordType == KeyManager::ChordType::Minor9 ||
+            chordType == KeyManager::ChordType::HalfDiminished7 ||
+            chordType == KeyManager::ChordType::Diminished7)
+        {
+            tonality = EmotionWheel::Tonality::Minor;
+        }
+    }
+    else
+    {
+        if (chordType == KeyManager::ChordType::Minor ||
+            chordType == KeyManager::ChordType::Diminished)
+        {
+            tonality = EmotionWheel::Tonality::Minor;
+        }
+    }
+    
+    auto emotions = emotionWheel.getEmotionsByTonality(tonality);
+    if (selectedEmotionIndex < emotions.size())
+    {
+        auto emotion = emotions[selectedEmotionIndex];
+        const auto* profile = emotionWheel.getEmotionProfile(emotion);
+        
+        if (profile)
+        {
+            emotionDescriptionLabel.setText(juce::String(profile->description), juce::dontSendNotification);
+        }
+    }
+}
+
+void MainComponent::applyEmotionToChord()
+{
+    int selectedChordIndex = chordSelectorComboBox.getSelectedId() - 1;
+    if (selectedChordIndex < 0 || selectedChordIndex >= customProgressionDegrees.size())
+        return;
+    
+    int selectedEmotionIndex = emotionComboBox.getSelectedId() - 1;
+    if (selectedEmotionIndex < 0)
+        return;
+    
+    // Get the selected emotion
+    int degree = customProgressionDegrees[selectedChordIndex];
+    auto scaleDegree = static_cast<KeyManager::ScaleDegree>(degree);
+    bool useSevenths = chordTypeComboBox.getSelectedId() == 2;
+    auto chordType = useSevenths ? keyManager.analyzeSeventh(scaleDegree) : keyManager.analyzeTriad(scaleDegree);
+    
+    EmotionWheel::Tonality tonality = EmotionWheel::Tonality::Major;
+    if (useSevenths)
+    {
+        if (chordType == KeyManager::ChordType::Minor7 ||
+            chordType == KeyManager::ChordType::Minor9 ||
+            chordType == KeyManager::ChordType::HalfDiminished7 ||
+            chordType == KeyManager::ChordType::Diminished7)
+        {
+            tonality = EmotionWheel::Tonality::Minor;
+        }
+    }
+    else
+    {
+        if (chordType == KeyManager::ChordType::Minor ||
+            chordType == KeyManager::ChordType::Diminished)
+        {
+            tonality = EmotionWheel::Tonality::Minor;
+        }
+    }
+    
+    auto emotions = emotionWheel.getEmotionsByTonality(tonality);
+    if (selectedEmotionIndex >= emotions.size())
+        return;
+    
+    auto emotion = emotions[selectedEmotionIndex];
+    
+    // Resize customProgressionEmotions if needed
+    while (customProgressionEmotions.size() < customProgressionDegrees.size())
+    {
+        customProgressionEmotions.push_back(EmotionWheel::Emotion::Happy_Maj6);  // Default
+    }
+    
+    // Store the emotion for this chord
+    customProgressionEmotions[selectedChordIndex] = emotion;
+    
+    // Update display to show the change
+    updateCustomProgressionDisplay();
+    
+    // If currently playing, restart with the new emotion applied
+    if (isPlaying)
+    {
+        playProgression();
+    }
+}
+
