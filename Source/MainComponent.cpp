@@ -20,16 +20,34 @@ MainComponent::MainComponent() : keyboard(keyboardState, juce::MidiKeyboardCompo
     keyComboBox.onChange = [this] { keySelectionChanged(); };
     addAndMakeVisible(keyComboBox);
     
-    // Add progression combo box
-    auto progressions = keyManager.getAvailableProgressions();
-    progressionComboBox.addItem("Select Progression", 1);
-    for (int i = 0; i < progressions.size(); ++i)
+    // Setup chord progression builder
+    progressionBuilderLabel.setText("Build Your Progression:", juce::dontSendNotification);
+    progressionBuilderLabel.setFont(juce::Font(14.0f, juce::Font::bold));
+    addAndMakeVisible(progressionBuilderLabel);
+    
+    // Setup chord buttons for each scale degree
+    const juce::StringArray romanNumerals = { "I", "II", "III", "IV", "V", "VI", "VII" };
+    for (int i = 0; i < 7; ++i)
     {
-        progressionComboBox.addItem(juce::String(progressions[i]), i + 2);
+        chordButtons[i].setButtonText(romanNumerals[i]);
+        chordButtons[i].onClick = [this, i] { addChordToProgression(i + 1); };
+        addAndMakeVisible(chordButtons[i]);
     }
-    progressionComboBox.setSelectedId(1);
-    progressionComboBox.onChange = [this] { progressionSelectionChanged(); };
-    addAndMakeVisible(progressionComboBox);
+    
+    // Apply circular LookAndFeel to the root button (I)
+    chordButtons[0].setLookAndFeel(&circularButtonLookAndFeel);
+    
+    clearProgressionButton.setButtonText("Clear");
+    clearProgressionButton.onClick = [this] { clearCustomProgression(); };
+    addAndMakeVisible(clearProgressionButton);
+    
+    removeLastChordButton.setButtonText("Remove Last");
+    removeLastChordButton.onClick = [this] { removeLastChordFromProgression(); };
+    addAndMakeVisible(removeLastChordButton);
+    
+    customProgressionDisplayLabel.setText("Progression: (empty)", juce::dontSendNotification);
+    customProgressionDisplayLabel.setFont(juce::Font(16.0f, juce::Font::bold));
+    addAndMakeVisible(customProgressionDisplayLabel);
     
     // Add chord type combo box
     chordTypeComboBox.addItem("Triads", 1);
@@ -97,14 +115,6 @@ MainComponent::MainComponent() : keyboard(keyboardState, juce::MidiKeyboardCompo
     waveformLabel.setText("Waveform:", juce::dontSendNotification);
     addAndMakeVisible(waveformLabel);
     
-    scaleNotesLabel.setText("Scale Notes: ", juce::dontSendNotification);
-    scaleNotesLabel.setFont(juce::Font(16.0f, juce::Font::bold));
-    addAndMakeVisible(scaleNotesLabel);
-    
-    chordsLabel.setText("Chords: ", juce::dontSendNotification);
-    chordsLabel.setFont(juce::Font(16.0f, juce::Font::bold));
-    addAndMakeVisible(chordsLabel);
-    
     progressionLabel.setText("Progression: ", juce::dontSendNotification);
     progressionLabel.setFont(juce::Font(16.0f, juce::Font::bold));
     addAndMakeVisible(progressionLabel);
@@ -113,13 +123,17 @@ MainComponent::MainComponent() : keyboard(keyboardState, juce::MidiKeyboardCompo
     keyboard.setKeyWidth(40.0f);
     addAndMakeVisible(keyboard);
     
-    playButton.setButtonText("Play");
-    playButton.onClick = [this] { playProgression(); };
-    addAndMakeVisible(playButton);
-    
-    stopButton.setButtonText("Stop");
-    stopButton.onClick = [this] { stopProgression(); };
-    addAndMakeVisible(stopButton);
+    playStopButton.setButtonText("Play");
+    playStopButton.onClick = [this] { 
+        if (isPlaying) {
+            stopProgression();
+        } else {
+            playProgression();
+        }
+        // Update button text based on current state
+        playStopButton.setButtonText(isPlaying ? "Stop" : "Play");
+    };
+    addAndMakeVisible(playStopButton);
     
     loopButton.setButtonText("Loop");
     loopButton.setToggleState(false, juce::dontSendNotification);
@@ -135,27 +149,10 @@ MainComponent::MainComponent() : keyboard(keyboardState, juce::MidiKeyboardCompo
     tempoLabel.setText("Tempo (BPM):", juce::dontSendNotification);
     addAndMakeVisible(tempoLabel);
     
-    audioSettingsButton.setButtonText("Audio Settings");
+    // Audio settings button in title bar
+    audioSettingsButton.setButtonText("...");  // Three dots for settings menu
     audioSettingsButton.onClick = [this] { showAudioSettings(); };
     addAndMakeVisible(audioSettingsButton);
-    
-    testToneButton.setButtonText("Test Tone");
-    testToneButton.onClick = [this] { 
-        // Play middle C for testing
-        keyboardState.noteOn(1, 60, 0.7f);
-        juce::Timer::callAfterDelay(1000, [this]() {
-            keyboardState.noteOff(1, 60, 0.0f);
-        });
-    };
-    addAndMakeVisible(testToneButton);
-    
-    refreshAudioButton.setButtonText("Refresh Audio");
-    refreshAudioButton.onClick = [this] { 
-        DBG("=== Manual Audio Refresh ===");
-        detectSystemAudioDevices();
-        tryInitializeAudioDevice();
-    };
-    addAndMakeVisible(refreshAudioButton);
     
     // Initialize playback state
     isPlaying = false;
@@ -179,6 +176,7 @@ MainComponent::MainComponent() : keyboard(keyboardState, juce::MidiKeyboardCompo
     synth.addSound(new SineWaveSound());
     
     updateDisplay();
+    updateChordButtonLabels();  // Initialize chord button labels with notes
     setSize(800, 700);
     
     // Initialize audio with 0 input channels and 2 output channels
@@ -248,6 +246,8 @@ MainComponent::MainComponent() : keyboard(keyboardState, juce::MidiKeyboardCompo
 
 MainComponent::~MainComponent()
 {
+    // Reset LookAndFeel to avoid dangling pointer
+    chordButtons[0].setLookAndFeel(nullptr);
     shutdownAudio();
 }
 
@@ -419,18 +419,23 @@ void MainComponent::paint(juce::Graphics& g)
 {
     const auto& colors = themeManager.getColors();
     g.fillAll(getLookAndFeel().findColour(juce::ResizableWindow::backgroundColourId));
-    // draw border around window
+    
+    // Draw custom title bar
+    auto titleBarArea = getLocalBounds().removeFromTop(30);
+    g.setColour(colors.textPrimary);
+    g.fillRect(titleBarArea);
+    
+    // Draw title text in title bar
+    g.setColour(colors.textSecondary);
+    g.setFont(juce::Font(16.0f, juce::Font::bold));
+    g.drawText("Chord Builder", titleBarArea.reduced(10, 0), 
+               juce::Justification::centredLeft, true);
+    
+    // Draw border around window
     g.setColour(colors.border);
     g.drawRect(getLocalBounds(), 4);
-    // create banner with text and image in asset folder
-    // draw filled rectangle as banner background
-    g.setColour(colors.textPrimary);
-    g.fillRect(getLocalBounds().removeFromTop(60));
-    g.setColour(colors.textSecondary);
-    g.setFont(juce::Font(30.0f, juce::Font::bold));
-    g.drawText("Chord Builder", getLocalBounds().removeFromTop(50), 
-               juce::Justification::topLeft, true);
-    // Load and draw logo
+    
+    // Load and draw logo (below title bar)
     auto logoFile = juce::File::getCurrentWorkingDirectory()
                         .getChildFile("assets")
                         .getChildFile("logo.jpg");
@@ -440,7 +445,7 @@ void MainComponent::paint(juce::Graphics& g)
         auto logoImage = juce::ImageCache::getFromFile(logoFile);
         if (logoImage.isValid())
         {
-            auto logoBounds = getLocalBounds().removeFromTop(50).removeFromRight(100).reduced(5);
+            auto logoBounds = getLocalBounds().removeFromTop(60).removeFromRight(100).reduced(5);
             g.drawImage(logoImage, logoBounds.toFloat(), juce::RectanglePlacement::centred);
         }
     }
@@ -449,7 +454,16 @@ void MainComponent::paint(juce::Graphics& g)
 void MainComponent::resized()
 {
     auto bounds = getLocalBounds();
-    bounds.removeFromTop(60); // Space for title
+    
+    // Audio settings button in title bar (top right) - use absolute positioning
+    auto settingsButtonBounds = juce::Rectangle<int>(getWidth() - 45, 5, 35, 20);
+    audioSettingsButton.setBounds(settingsButtonBounds);
+    
+    // Title bar area
+    bounds.removeFromTop(30);  // Title bar height
+    
+    // Add some spacing after title bar
+    bounds.removeFromTop(30);
     
     // First row: Key and Chord Type
     auto topSection = bounds.removeFromTop(50);
@@ -466,16 +480,46 @@ void MainComponent::resized()
     
     bounds.removeFromTop(10);
     
-    // Second row: Progression
-    auto progressionSection = bounds.removeFromTop(50);
-    progressionComboBox.setBounds(progressionSection.reduced(10));
+    // Chord progression builder section - increased height for circular layout
+    auto builderSection = bounds.removeFromTop(200);
+    progressionBuilderLabel.setBounds(builderSection.removeFromTop(25).reduced(10));
+    
+    // Chord buttons in circular layout with root (I) in center
+    auto chordButtonArea = builderSection.removeFromTop(150);
+    int centerX = chordButtonArea.getCentreX();
+    int centerY = chordButtonArea.getCentreY();
+    int radius = 70;  // Distance from center
+    int buttonSize = 60;  // Button diameter
+    
+    // Position root note (I) in the center
+    chordButtons[0].setBounds(centerX - buttonSize/2, centerY - buttonSize/2, buttonSize, buttonSize);
+    
+    // Position other 6 buttons in a circle around the center
+    for (int i = 1; i < 7; ++i)
+    {
+        // Calculate angle for each button (starting at top, going clockwise)
+        // Offset by -90 degrees to start at top
+        double angle = juce::MathConstants<double>::pi * 2.0 * (i - 1) / 6.0 - juce::MathConstants<double>::pi / 2.0;
+        
+        int x = centerX + static_cast<int>(radius * std::cos(angle)) - buttonSize/2;
+        int y = centerY + static_cast<int>(radius * std::sin(angle)) - buttonSize/2;
+        
+        chordButtons[i].setBounds(x, y, buttonSize, buttonSize);
+    }
+    
+    // Control buttons for progression
+    auto progressionControlRow = builderSection.removeFromTop(40).reduced(10);
+    clearProgressionButton.setBounds(progressionControlRow.removeFromLeft(100).reduced(5));
+    removeLastChordButton.setBounds(progressionControlRow.removeFromLeft(120).reduced(5));
+    
+    // Custom progression display
+    customProgressionDisplayLabel.setBounds(builderSection.removeFromTop(30).reduced(10));
     
     bounds.removeFromTop(20);
     
     // Control buttons and tempo
     auto controlSection = bounds.removeFromTop(50);
-    playButton.setBounds(controlSection.removeFromLeft(80).reduced(5));
-    stopButton.setBounds(controlSection.removeFromLeft(80).reduced(5));
+    playStopButton.setBounds(controlSection.removeFromLeft(80).reduced(5));
     loopButton.setBounds(controlSection.removeFromLeft(80).reduced(5));
     
     auto tempoSection = controlSection.removeFromLeft(200).reduced(5);
@@ -486,17 +530,7 @@ void MainComponent::resized()
     timeSignatureLabel.setBounds(timeSignatureSection.removeFromTop(20));
     timeSignatureComboBox.setBounds(timeSignatureSection);
     
-    audioSettingsButton.setBounds(controlSection.removeFromLeft(120).reduced(5));
-    testToneButton.setBounds(controlSection.removeFromLeft(100).reduced(5));
-    refreshAudioButton.setBounds(controlSection.removeFromLeft(120).reduced(5));
-    
     bounds.removeFromTop(20);
-    
-    scaleNotesLabel.setBounds(bounds.removeFromTop(30));
-    bounds.removeFromTop(10);
-    
-    chordsLabel.setBounds(bounds.removeFromTop(30));
-    bounds.removeFromTop(10);
     
     progressionLabel.setBounds(bounds.removeFromTop(30));
     bounds.removeFromTop(20);
@@ -514,6 +548,7 @@ void MainComponent::keySelectionChanged()
     int selectedKey = keyComboBox.getSelectedId() - 1;
     keyManager.setCurrentKey(static_cast<KeyManager::Key>(selectedKey));
     updateDisplay();
+    updateChordButtonLabels();  // Update button labels when key changes
     
     // If currently playing, reload the progression with the new key
     if (isPlaying)
@@ -535,66 +570,8 @@ void MainComponent::progressionSelectionChanged()
 
 void MainComponent::updateDisplay()
 {
-    // Update scale notes
-    auto scaleNoteNames = keyManager.getScaleNoteNames();
-    juce::String scaleText = "Scale Notes: ";
-    for (int i = 0; i < scaleNoteNames.size(); ++i)
-    {
-        scaleText += juce::String(scaleNoteNames[i]);
-        if (i < scaleNoteNames.size() - 1)
-            scaleText += " - ";
-    }
-    scaleNotesLabel.setText(scaleText, juce::dontSendNotification);
-    
-    // Update chords based on selected type
-    juce::String chordsText = "Chords: ";
-    bool useSevenths = chordTypeComboBox.getSelectedId() == 2;
-    
-    for (int i = 1; i <= 7; ++i)
-    {
-        auto degree = static_cast<KeyManager::ScaleDegree>(i);
-        auto chordType = useSevenths ? keyManager.analyzeSeventh(degree) : keyManager.analyzeTriad(degree);
-        std::string chordName = keyManager.getChordName(degree, chordType);
-        
-        chordsText += juce::String(chordName);
-        if (i < 7)
-            chordsText += " - ";
-    }
-    chordsLabel.setText(chordsText, juce::dontSendNotification);
-    
-    // Update progression if selected
-    if (progressionComboBox.getSelectedId() > 1)
-    {
-        auto progressions = keyManager.getAvailableProgressions();
-        int progressionIndex = progressionComboBox.getSelectedId() - 2;
-        
-        if (progressionIndex >= 0 && progressionIndex < progressions.size())
-        {
-            bool useSevenths = chordTypeComboBox.getSelectedId() == 2;
-            auto progression = keyManager.getCommonProgression(progressions[progressionIndex], useSevenths);
-            juce::String progressionText = "Progression (" + juce::String(progressions[progressionIndex]) + "): ";
-            
-            for (int i = 0; i < progression.size(); ++i)
-            {
-                if (!progression[i].empty())
-                {
-                    // Get the root note name - convert MIDI note to pitch class
-                    auto chromaticNames = keyManager.getChromaticNoteNames();
-                    int pitchClass = progression[i][0] % 12; // Convert MIDI note to pitch class (0-11)
-                    juce::String rootNote = juce::String(chromaticNames[pitchClass]);
-                    progressionText += rootNote;
-                    
-                    if (i < progression.size() - 1)
-                        progressionText += " - ";
-                }
-            }
-            progressionLabel.setText(progressionText, juce::dontSendNotification);
-        }
-    }
-    else
-    {
-        progressionLabel.setText("Progression: Select a progression above", juce::dontSendNotification);
-    }
+    // Update custom progression display
+    updateCustomProgressionDisplay();
 }
 
 void MainComponent::updateTimeSignature()
@@ -677,40 +654,53 @@ void MainComponent::updateWaveform()
 
 void MainComponent::playProgression()
 {
-    if (progressionComboBox.getSelectedId() > 1)
+    // Play custom progression if it exists
+    if (!customProgressionDegrees.empty())
     {
         stopProgression(); // Stop any current playback
         
-        auto progressions = keyManager.getAvailableProgressions();
-        int progressionIndex = progressionComboBox.getSelectedId() - 2;
+        bool useSevenths = chordTypeComboBox.getSelectedId() == 2;
         
-        if (progressionIndex >= 0 && progressionIndex < progressions.size())
+        // Get selected voicing
+        KeyManager::Voicing voicing = KeyManager::Voicing::Close;
+        int voicingId = voicingComboBox.getSelectedId();
+        switch (voicingId)
         {
-            bool useSevenths = chordTypeComboBox.getSelectedId() == 2;
-            
-            // Get selected voicing
-            KeyManager::Voicing voicing = KeyManager::Voicing::Close;
-            int voicingId = voicingComboBox.getSelectedId();
-            switch (voicingId)
-            {
-                case 1: voicing = KeyManager::Voicing::Close; break;
-                case 2: voicing = KeyManager::Voicing::Open; break;
-                case 3: voicing = KeyManager::Voicing::Drop2; break;
-                case 4: voicing = KeyManager::Voicing::Drop3; break;
-                case 5: voicing = KeyManager::Voicing::FirstInversion; break;
-                case 6: voicing = KeyManager::Voicing::SecondInversion; break;
-                case 7: voicing = KeyManager::Voicing::Spread; break;
-                default: voicing = KeyManager::Voicing::Close; break;
-            }
-            
-            currentProgression = keyManager.getCommonProgression(progressions[progressionIndex], useSevenths, voicing);
-            currentChordIndex = 0;
-            isPlaying = true;
-            
-            // Calculate initial timing based on time signature
-            updateChordDuration();
-            samplesUntilNextChord = 0; // Start immediately
+            case 1: voicing = KeyManager::Voicing::Close; break;
+            case 2: voicing = KeyManager::Voicing::Open; break;
+            case 3: voicing = KeyManager::Voicing::Drop2; break;
+            case 4: voicing = KeyManager::Voicing::Drop3; break;
+            case 5: voicing = KeyManager::Voicing::FirstInversion; break;
+            case 6: voicing = KeyManager::Voicing::SecondInversion; break;
+            case 7: voicing = KeyManager::Voicing::Spread; break;
+            default: voicing = KeyManager::Voicing::Close; break;
         }
+        
+        // Build progression from scale degrees
+        currentProgression.clear();
+        for (int degree : customProgressionDegrees)
+        {
+            auto scaleDegree = static_cast<KeyManager::ScaleDegree>(degree);
+            
+            // Generate chord based on type
+            std::vector<int> chord;
+            if (useSevenths)
+                chord = keyManager.generateSeventh(scaleDegree);
+            else
+                chord = keyManager.generateTriad(scaleDegree);
+            
+            // Apply voicing
+            chord = keyManager.applyVoicing(chord, voicing);
+            
+            currentProgression.push_back(chord);
+        }
+        
+        currentChordIndex = 0;
+        isPlaying = true;
+        
+        // Calculate initial timing based on time signature
+        updateChordDuration();
+        samplesUntilNextChord = 0; // Start immediately
     }
 }
 
@@ -720,6 +710,14 @@ void MainComponent::stopProgression()
     currentChordIndex = 0;
     currentProgression.clear();
     stopCurrentChord();
+    
+    // Update button text on the message thread (safe when called from audio thread)
+    // If called from message thread (e.g., onClick), this will queue but the onClick
+    // handler's synchronous update happens first, so no conflict
+    juce::MessageManager::callAsync([safeThis = juce::Component::SafePointer<MainComponent>(this)]() {
+        if (safeThis != nullptr && !safeThis->isPlaying)
+            safeThis->playStopButton.setButtonText("Play");
+    });
 }
 
 void MainComponent::playChord(const std::vector<int>& chord)
@@ -820,5 +818,94 @@ void MainComponent::detectSystemAudioDevices()
     {
         auto* deviceType = audioDeviceTypes[i];
         DBG("Type " << i << ": " << deviceType->getTypeName());
+    }
+}
+
+//==============================================================================
+// Chord Progression Builder Methods
+
+void MainComponent::addChordToProgression(int scaleDegree)
+{
+    customProgressionDegrees.push_back(scaleDegree);
+    updateCustomProgressionDisplay();
+}
+
+void MainComponent::clearCustomProgression()
+{
+    customProgressionDegrees.clear();
+    updateCustomProgressionDisplay();
+    
+    // Stop playback if currently playing
+    if (isPlaying)
+    {
+        stopProgression();
+    }
+}
+
+void MainComponent::removeLastChordFromProgression()
+{
+    if (!customProgressionDegrees.empty())
+    {
+        customProgressionDegrees.pop_back();
+        updateCustomProgressionDisplay();
+    }
+}
+
+void MainComponent::updateCustomProgressionDisplay()
+{
+    if (customProgressionDegrees.empty())
+    {
+        customProgressionDisplayLabel.setText("Progression: (empty)", juce::dontSendNotification);
+        progressionLabel.setText("Progression: Build a progression above", juce::dontSendNotification);
+        return;
+    }
+    
+    // Build display string with roman numerals
+    const juce::StringArray romanNumerals = { "I", "II", "III", "IV", "V", "VI", "VII" };
+    juce::String progressionText = "Progression: ";
+    
+    for (int i = 0; i < customProgressionDegrees.size(); ++i)
+    {
+        int degree = customProgressionDegrees[i];
+        progressionText += romanNumerals[degree - 1];
+        
+        if (i < customProgressionDegrees.size() - 1)
+            progressionText += " - ";
+    }
+    
+    customProgressionDisplayLabel.setText(progressionText, juce::dontSendNotification);
+    
+    // Also update the detailed progression label with chord names
+    bool useSevenths = chordTypeComboBox.getSelectedId() == 2;
+    juce::String detailedText = "Progression: ";
+    
+    for (int i = 0; i < customProgressionDegrees.size(); ++i)
+    {
+        int degree = customProgressionDegrees[i];
+        auto scaleDegree = static_cast<KeyManager::ScaleDegree>(degree);
+        auto chordType = useSevenths ? keyManager.analyzeSeventh(scaleDegree) : keyManager.analyzeTriad(scaleDegree);
+        std::string chordName = keyManager.getChordName(scaleDegree, chordType);
+        
+        detailedText += juce::String(chordName);
+        
+        if (i < customProgressionDegrees.size() - 1)
+            detailedText += " - ";
+    }
+    
+    progressionLabel.setText(detailedText, juce::dontSendNotification);
+}
+
+void MainComponent::updateChordButtonLabels()
+{
+    const juce::StringArray romanNumerals = { "I", "II", "III", "IV", "V", "VI", "VII" };
+    auto scaleNotes = keyManager.getScaleNoteNames();
+    
+    for (int i = 0; i < 7; ++i)
+    {
+        if (i < scaleNotes.size())
+        {
+            juce::String buttonText = romanNumerals[i] + "\n" + juce::String(scaleNotes[i]);
+            chordButtons[i].setButtonText(buttonText);
+        }
     }
 }

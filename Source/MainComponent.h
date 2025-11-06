@@ -5,6 +5,29 @@
 #include "ThemeManager.h"  // Temporarily disabled
 
 //==============================================================================
+// Custom LookAndFeel for circular button
+class CircularButtonLookAndFeel : public juce::LookAndFeel_V4
+{
+public:
+    void drawButtonBackground(juce::Graphics& g, juce::Button& button, const juce::Colour& backgroundColour,
+                            bool shouldDrawButtonAsHighlighted, bool shouldDrawButtonAsDown) override
+    {
+        auto bounds = button.getLocalBounds().toFloat();
+        auto baseColour = backgroundColour.withMultipliedSaturation(button.hasKeyboardFocus(true) ? 1.3f : 0.9f)
+                                          .withMultipliedAlpha(button.isEnabled() ? 1.0f : 0.5f);
+
+        if (shouldDrawButtonAsDown || shouldDrawButtonAsHighlighted)
+            baseColour = baseColour.contrasting(shouldDrawButtonAsDown ? 0.2f : 0.05f);
+
+        g.setColour(baseColour);
+        g.fillEllipse(bounds);
+        
+        g.setColour(button.findColour(juce::ComboBox::outlineColourId));
+        g.drawEllipse(bounds.reduced(1.0f), 2.0f);
+    }
+};
+
+//==============================================================================
 // Forward declaration
 class SineWaveSound;
 
@@ -216,17 +239,19 @@ private:
     juce::ComboBox timeSignatureComboBox;
     juce::ComboBox voicingComboBox;
     juce::ComboBox waveformComboBox;
-    juce::TextButton playButton;
-    juce::TextButton stopButton;
+    juce::TextButton playStopButton;  // Combined play/stop button
     juce::ToggleButton loopButton;
     juce::Slider tempoSlider;
     juce::TextButton audioSettingsButton;
-    juce::TextButton testToneButton;
-    juce::TextButton refreshAudioButton;
+    
+    // Chord progression builder components
+    std::array<juce::TextButton, 7> chordButtons;  // Buttons for scale degrees I-VII
+    juce::TextButton clearProgressionButton;
+    juce::TextButton removeLastChordButton;
+    juce::Label progressionBuilderLabel;
+    juce::Label customProgressionDisplayLabel;
     
     // Labels
-    juce::Label scaleNotesLabel;
-    juce::Label chordsLabel;
     juce::Label progressionLabel;
     juce::Label tempoLabel;
     juce::Label timeSignatureLabel;
@@ -235,6 +260,9 @@ private:
     
     // Key Manager
     KeyManager keyManager;
+    
+    // Custom LookAndFeel for circular root button
+    CircularButtonLookAndFeel circularButtonLookAndFeel;
     
     // MIDI and Audio Components
     juce::Synthesiser synth;
@@ -254,6 +282,8 @@ private:
     int beatUnit;
     std::vector<std::vector<int>> currentProgression;
     std::vector<int> currentChordNotes;
+    std::vector<int> customProgressionDegrees;  // Stores the scale degrees (1-7) for custom progression
+
     
     //==============================================================================
     // Callback functions
@@ -263,6 +293,15 @@ private:
     void updateTimeSignature();
     void updateChordDuration();
     void updateWaveform();
+    
+    // Chord progression builder functions
+    void addChordToProgression(int scaleDegree);
+    void clearCustomProgression();
+    void removeLastChordFromProgression();
+    void updateCustomProgressionDisplay();
+    void playCustomProgression();
+    void updateChordButtonLabels();
+
     
     // MIDI Playback functions
     void playProgression();
