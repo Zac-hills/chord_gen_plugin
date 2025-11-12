@@ -29,6 +29,71 @@ public:
 };
 
 //==============================================================================
+// Custom LookAndFeel for square button
+class SquareButtonLookAndFeel : public juce::LookAndFeel_V4
+{
+public:
+    void drawButtonBackground(juce::Graphics& g, juce::Button& button, const juce::Colour& backgroundColour,
+                            bool shouldDrawButtonAsHighlighted, bool shouldDrawButtonAsDown) override
+    {
+        auto bounds = button.getLocalBounds().toFloat();
+        auto baseColour = backgroundColour.withMultipliedSaturation(button.hasKeyboardFocus(true) ? 1.3f : 0.9f)
+                                          .withMultipliedAlpha(button.isEnabled() ? 1.0f : 0.5f);
+
+        if (shouldDrawButtonAsDown || shouldDrawButtonAsHighlighted)
+            baseColour = baseColour.contrasting(shouldDrawButtonAsDown ? 0.2f : 0.05f);
+
+        g.setColour(baseColour);
+        g.fillRect(bounds);
+        
+        g.setColour(button.findColour(juce::ComboBox::outlineColourId));
+        g.drawRect(bounds.reduced(1.0f), 2.0f);
+    }
+};
+
+//==============================================================================
+// Button with badge component
+class ButtonWithBadge : public juce::Component
+{
+public:
+    ButtonWithBadge()
+    {
+        addAndMakeVisible(mainButton);
+        addAndMakeVisible(badgeButton);
+        
+        // Make main button square
+        mainButton.setLookAndFeel(&squareLookAndFeel);
+        
+        // Make badge circular and set "x" text
+        badgeButton.setButtonText("x");
+        badgeButton.setLookAndFeel(&circularLookAndFeel);
+    }
+    
+    ~ButtonWithBadge() noexcept override
+    {
+        mainButton.setLookAndFeel(nullptr);
+        badgeButton.setLookAndFeel(nullptr);
+    }
+    
+    void resized() override
+    {
+        auto bounds = getLocalBounds();
+        mainButton.setBounds(bounds);
+        
+        // Position small badge at top-left
+        int badgeSize = 16;
+        badgeButton.setBounds(0, 0, badgeSize, badgeSize);
+    }
+    
+    juce::TextButton mainButton;
+    juce::TextButton badgeButton;
+    
+private:
+    SquareButtonLookAndFeel squareLookAndFeel;
+    CircularButtonLookAndFeel circularLookAndFeel;
+};
+
+//==============================================================================
 // Forward declaration
 class SineWaveSound;
 
@@ -229,7 +294,8 @@ public:
 
 private:
     //==============================================================================
-    ThemeManager themeManager;  // Temporarily disabled
+    ThemeManager themeManager;
+    const short MAX_PROGRESSION_SIZE = 8;
     // UI Components
     juce::GroupComponent songSetupGroup;
     juce::GroupComponent refinementGroup;
@@ -240,7 +306,6 @@ private:
     juce::ComboBox progressionsDropdown;  // Dummy dropdown for progressions
     juce::ComboBox chordTypeComboBox;
     juce::ComboBox timeSignatureComboBox;
-    juce::ComboBox voicingComboBox;
     juce::ComboBox waveformComboBox;
     juce::TextButton playStopButton;  // Combined play/stop button
     juce::ToggleButton loopButton;
@@ -248,10 +313,8 @@ private:
     juce::TextButton audioSettingsButton;
     
     // Emotion Wheel components
-    juce::ComboBox chordSelectorComboBox;
     juce::ComboBox emotionComboBox;
     juce::TextButton applyEmotionButton;
-    juce::Label chordSelectorLabel;
     juce::Label emotionLabel;
     juce::Label emotionDescriptionLabel;
     
@@ -295,9 +358,11 @@ private:
     int beatsPerMeasure;
     int beatUnit;
     std::vector<std::vector<int>> currentProgression;
+    juce::OwnedArray<ButtonWithBadge> chordButtonsWithBadges;
     std::vector<int> currentChordNotes;
     std::vector<int> customProgressionDegrees;  // Stores the scale degrees (1-7) for custom progression
     std::vector<EmotionWheel::Emotion> customProgressionEmotions;  // Stores applied emotions (parallel to customProgressionDegrees)
+    int selectedChordIndexForEmotion = -1;  // Track which chord is selected for emotion editing
 
     
     //==============================================================================
@@ -313,6 +378,7 @@ private:
     void addChordToProgression(int scaleDegree);
     void clearCustomProgression();
     void removeLastChordFromProgression();
+    void removeChordAtIndex(int index);
     void updateCustomProgressionDisplay();
     void playCustomProgression();
     void updateChordButtonLabels();
@@ -322,6 +388,7 @@ private:
     void updateEmotionComboBox();
     void applyEmotionToChord();
     void updateEmotionDescription();
+    void selectChordForEmotionWheel(int chordIndex);
 
     
     // MIDI Playback functions
