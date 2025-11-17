@@ -287,6 +287,11 @@ public:
     //==============================================================================
     void paint (juce::Graphics& g) override;
     void resized() override;
+    
+    //==============================================================================
+    void mouseEnter(const juce::MouseEvent& event) override;
+    void mouseExit(const juce::MouseEvent& event) override;
+    void mouseDrag(const juce::MouseEvent& event) override;
 
     //==============================================================================
     void applyTheme();  // Temporarily disabled
@@ -309,6 +314,7 @@ private:
     juce::ToggleButton loopButton;
     juce::Label tempoEditor;  // Text field for tempo entry
     juce::TextButton audioSettingsButton;
+    juce::TextButton midiDragButton;  // Button to drag MIDI progression to DAW
     
     // Emotion Wheel components
     std::array<juce::TextButton, 24> emotionButtons;  // Grid of emotion buttons

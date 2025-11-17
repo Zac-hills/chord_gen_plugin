@@ -31,6 +31,10 @@ MainComponent::MainComponent() : keyboard(keyboardState, juce::MidiKeyboardCompo
     {
         chordButtons[i].setButtonText(romanNumerals[i]);
         chordButtons[i].onClick = [this, i] { addChordToProgression(i + 1); };
+        
+        // Add mouse enter listener to play chord on hover
+        chordButtons[i].addMouseListener(this, false);
+        
         addAndMakeVisible(chordButtons[i]);
     }
     
@@ -99,6 +103,11 @@ MainComponent::MainComponent() : keyboard(keyboardState, juce::MidiKeyboardCompo
     tempoLabel.setText("Tempo (BPM):", juce::dontSendNotification);
     addAndMakeVisible(tempoLabel);
     
+    // MIDI drag button
+    midiDragButton.setButtonText("Drag MIDI");
+    midiDragButton.addMouseListener(this, false);
+    addAndMakeVisible(midiDragButton);
+    
     // Setup emotion buttons
     for (int i = 0; i < 24; ++i)
     {
@@ -107,6 +116,10 @@ MainComponent::MainComponent() : keyboard(keyboardState, juce::MidiKeyboardCompo
             updateEmotionDescription();
             applyEmotionToChord();
         };
+        
+        // Add mouse listener to play emotion chord on hover
+        emotionButtons[i].addMouseListener(this, false);
+        
         addAndMakeVisible(emotionButtons[i]);
     }
     
@@ -172,7 +185,7 @@ MainComponent::MainComponent() : keyboard(keyboardState, juce::MidiKeyboardCompo
     
     updateDisplay();
     updateChordButtonLabels();  // Initialize chord button labels with notes
-    setSize(800, 700);
+    setSize(1200, 700);
     
     // Initialize audio with 0 input channels and 2 output channels
     setAudioChannels(0, 2);
@@ -574,11 +587,6 @@ void MainComponent::resized()
     // Reserve space on the right for play controls
     auto playControlArea = progressionArea.removeFromRight(180);
     
-    // Position play/stop and loop buttons vertically stacked on the right
-    playControlArea.removeFromTop(10);  // Top padding
-    playStopButton.setBounds(playControlArea.removeFromTop(30).reduced(10, 0));
-    loopButton.setBounds(playControlArea.removeFromTop(30).reduced(10, 0));
-    
     // Layout badge buttons horizontally in the progression area
     auto badgeButtonArea = progressionArea.reduced(20, 40);  // Add padding
     int badgeButtonWidth = 90;
@@ -595,6 +603,12 @@ void MainComponent::resized()
             chordButtonsWithBadges[i]->setBounds(x, y, badgeButtonWidth, badgeButtonHeight);
         }
     }
+    
+    // Position play/stop, loop, and MIDI drag buttons aligned with badge buttons
+    int playButtonY = badgeButtonArea.getY();
+    playStopButton.setBounds(playControlArea.getX() + 10, playButtonY, playControlArea.getWidth() - 20, 25);
+    loopButton.setBounds(playControlArea.getX() + 10, playButtonY + 30, playControlArea.getWidth() - 20, 25);
+    midiDragButton.setBounds(playControlArea.getX() + 10, playButtonY + 60, playControlArea.getWidth() - 20, 25);
     
     // Hide the keyboard (keep for MIDI functionality but don't display)
     keyboard.setBounds(0, 0, 0, 0);
@@ -804,7 +818,211 @@ void MainComponent::stopCurrentChord()
     {
         keyboardState.noteOff(1, note, 0.0f);
     }
-    currentChordNotes.clear();
+}
+
+void MainComponent::mouseEnter(const juce::MouseEvent& event)
+{
+    // Check if the mouse is over one of the chord buttons
+    for (int i = 0; i < 7; ++i)
+    {
+        if (event.eventComponent == &chordButtons[i])
+        {
+            // Generate and play the chord for this scale degree
+            auto scaleDegree = static_cast<KeyManager::ScaleDegree>(i + 1);
+            bool useSevenths = chordTypeComboBox.getSelectedId() == 2;
+            
+            std::vector<int> chord;
+            if (useSevenths)
+            {
+                chord = keyManager.generateSeventh(scaleDegree);
+            }
+            else
+            {
+                chord = keyManager.generateTriad(scaleDegree);
+            }
+            
+            playChord(chord);
+            return;
+        }
+    }
+    
+    // Check if the mouse is over one of the emotion buttons
+    for (int i = 0; i < 24; ++i)
+    {
+        if (event.eventComponent == &emotionButtons[i])
+        {
+            // Only play if a chord is selected and the button is enabled
+            if (selectedChordIndexForEmotion >= 0 && 
+                selectedChordIndexForEmotion < customProgressionDegrees.size() &&
+                emotionButtons[i].isEnabled())
+            {
+                // Get the base chord
+                int degree = customProgressionDegrees[selectedChordIndexForEmotion];
+                auto scaleDegree = static_cast<KeyManager::ScaleDegree>(degree);
+                bool useSevenths = chordTypeComboBox.getSelectedId() == 2;
+                
+                std::vector<int> baseChord;
+                if (useSevenths)
+                {
+                    baseChord = keyManager.generateSeventh(scaleDegree);
+                }
+                else
+                {
+                    baseChord = keyManager.generateTriad(scaleDegree);
+                }
+                
+                // Get the tonality to find the right emotion
+                auto chordType = useSevenths ? keyManager.analyzeSeventh(scaleDegree) : keyManager.analyzeTriad(scaleDegree);
+                EmotionWheel::Tonality tonality = EmotionWheel::Tonality::Major;
+                
+                if (useSevenths)
+                {
+                    if (chordType == KeyManager::ChordType::Minor7 ||
+                        chordType == KeyManager::ChordType::Minor9 ||
+                        chordType == KeyManager::ChordType::HalfDiminished7 ||
+                        chordType == KeyManager::ChordType::Diminished7)
+                    {
+                        tonality = EmotionWheel::Tonality::Minor;
+                    }
+                }
+                else
+                {
+                    if (chordType == KeyManager::ChordType::Minor ||
+                        chordType == KeyManager::ChordType::Diminished)
+                    {
+                        tonality = EmotionWheel::Tonality::Minor;
+                    }
+                }
+                
+                // Get the emotion and apply it
+                auto emotions = emotionWheel.getEmotionsByTonality(tonality);
+                if (i < emotions.size())
+                {
+                    auto emotion = emotions[i];
+                    int rootNote = baseChord[0];
+                    std::vector<int> emotionChord = emotionWheel.applyEmotion(rootNote, emotion);
+                    playChord(emotionChord);
+                }
+            }
+            return;
+        }
+    }
+}
+
+void MainComponent::mouseExit(const juce::MouseEvent& event)
+{
+    // Check if the mouse is leaving one of the chord buttons
+    for (int i = 0; i < 7; ++i)
+    {
+        if (event.eventComponent == &chordButtons[i])
+        {
+            stopCurrentChord();
+            currentChordNotes.clear();
+            return;
+        }
+    }
+    
+    // Check if the mouse is leaving one of the emotion buttons
+    for (int i = 0; i < 24; ++i)
+    {
+        if (event.eventComponent == &emotionButtons[i])
+        {
+            stopCurrentChord();
+            currentChordNotes.clear();
+            return;
+        }
+    }
+}
+
+void MainComponent::mouseDrag(const juce::MouseEvent& event)
+{
+    // Check if dragging from MIDI drag button
+    if (event.eventComponent == &midiDragButton && event.getDistanceFromDragStart() > 10)
+    {
+        if (customProgressionDegrees.empty())
+            return;
+            
+        // Create a MIDI sequence from the current progression
+        juce::MidiFile midiFile;
+        midiFile.setTicksPerQuarterNote(960);
+        
+        juce::MidiMessageSequence track;
+        
+        // Get time signature
+        int beatsPerBar = 4;
+        switch (timeSignatureComboBox.getSelectedId())
+        {
+            case 1: beatsPerBar = 4; break;  // 4/4
+            case 2: beatsPerBar = 3; break;  // 3/4
+            case 3: beatsPerBar = 6; break;  // 6/8
+            case 4: beatsPerBar = 5; break;  // 5/4
+            default: beatsPerBar = 4; break;
+        }
+        
+        // Calculate ticks per chord based on time signature
+        int ticksPerChord = midiFile.getTimeFormat() * beatsPerBar;
+        
+        // Add each chord to the MIDI sequence
+        int currentTick = 0;
+        bool useSevenths = chordTypeComboBox.getSelectedId() == 2;
+        
+        for (size_t i = 0; i < customProgressionDegrees.size(); ++i)
+        {
+            int degree = customProgressionDegrees[i];
+            auto scaleDegree = static_cast<KeyManager::ScaleDegree>(degree);
+            
+            // Generate base chord
+            std::vector<int> chord;
+            if (useSevenths)
+            {
+                chord = keyManager.generateSeventh(scaleDegree);
+            }
+            else
+            {
+                chord = keyManager.generateTriad(scaleDegree);
+            }
+            
+            // Apply emotion if one exists for this chord
+            if (i < customProgressionEmotions.size())
+            {
+                auto emotion = customProgressionEmotions[i];
+                int rootNote = chord[0];
+                chord = emotionWheel.applyEmotion(rootNote, emotion);
+            }
+            
+            // Add MIDI notes for this chord
+            for (int note : chord)
+            {
+                if (note >= 0 && note < 128)
+                {
+                    track.addEvent(juce::MidiMessage::noteOn(1, note, 0.7f), currentTick);
+                    track.addEvent(juce::MidiMessage::noteOff(1, note), currentTick + ticksPerChord);
+                }
+            }
+            
+            currentTick += ticksPerChord;
+        }
+        
+        midiFile.addTrack(track);
+        
+        // Write MIDI file to temporary location
+        auto tempFile = juce::File::getSpecialLocation(juce::File::tempDirectory)
+            .getChildFile("chord_progression.mid");
+        
+        juce::FileOutputStream stream(tempFile);
+        if (stream.openedOk())
+        {
+            midiFile.writeTo(stream);
+            stream.flush();
+            
+            // Create drag description with file
+            juce::StringArray files;
+            files.add(tempFile.getFullPathName());
+            
+            // Use DragAndDropContainer to perform the drag operation
+            juce::DragAndDropContainer::performExternalDragDropOfFiles(files, true, &midiDragButton, nullptr);
+        }
+    }
 }
 
 void MainComponent::showAudioSettings()
@@ -881,7 +1099,25 @@ void MainComponent::detectSystemAudioDevices()
 
 void MainComponent::addChordToProgression(int scaleDegree)
 {
-    customProgressionDegrees.push_back(scaleDegree);
+    // If at max capacity and a chord is selected, replace the selected chord
+    if (customProgressionDegrees.size() >= MAX_PROGRESSION_SIZE && 
+        selectedChordIndexForEmotion >= 0 && 
+        selectedChordIndexForEmotion < customProgressionDegrees.size())
+    {
+        customProgressionDegrees[selectedChordIndexForEmotion] = scaleDegree;
+        // Reset to default emotion for the replaced chord
+        if (selectedChordIndexForEmotion < customProgressionEmotions.size())
+        {
+            customProgressionEmotions[selectedChordIndexForEmotion] = EmotionWheel::Emotion::Happy_Maj6;
+        }
+    }
+    // Otherwise, add if under max capacity
+    else if (customProgressionDegrees.size() < MAX_PROGRESSION_SIZE)
+    {
+        customProgressionDegrees.push_back(scaleDegree);
+    }
+    // If at max and no selection, don't add (silently ignore)
+    
     updateCustomProgressionDisplay();
     updateChordSelector();  // Update emotion wheel UI
 }
