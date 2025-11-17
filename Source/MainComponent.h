@@ -298,7 +298,6 @@ private:
     const short MAX_PROGRESSION_SIZE = 8;
     // UI Components
     juce::GroupComponent songSetupGroup;
-    juce::GroupComponent refinementGroup;
     juce::GroupComponent progressionBuilderGroup;
     juce::GroupComponent emotionWheelGroup;
     juce::ComboBox keyComboBox;
@@ -306,22 +305,18 @@ private:
     juce::ComboBox progressionsDropdown;  // Dummy dropdown for progressions
     juce::ComboBox chordTypeComboBox;
     juce::ComboBox timeSignatureComboBox;
-    juce::ComboBox waveformComboBox;
     juce::TextButton playStopButton;  // Combined play/stop button
     juce::ToggleButton loopButton;
-    juce::Slider tempoSlider;
+    juce::Label tempoEditor;  // Text field for tempo entry
     juce::TextButton audioSettingsButton;
     
     // Emotion Wheel components
-    juce::ComboBox emotionComboBox;
-    juce::TextButton applyEmotionButton;
-    juce::Label emotionLabel;
+    std::array<juce::TextButton, 24> emotionButtons;  // Grid of emotion buttons
     juce::Label emotionDescriptionLabel;
+    int selectedEmotionIndex = -1;
     
     // Chord progression builder components
     std::array<juce::TextButton, 7> chordButtons;  // Buttons for scale degrees I-VII
-    juce::TextButton clearProgressionButton;
-    juce::TextButton removeLastChordButton;
     juce::Label progressionBuilderLabel;
     juce::Label customProgressionDisplayLabel;
     
@@ -330,7 +325,6 @@ private:
     juce::Label tempoLabel;
     juce::Label timeSignatureLabel;
     juce::Label voicingLabel;
-    juce::Label waveformLabel;
     
     // Key Manager
     KeyManager keyManager;
@@ -372,7 +366,6 @@ private:
     void updateDisplay();
     void updateTimeSignature();
     void updateChordDuration();
-    void updateWaveform();
     
     // Chord progression builder functions
     void addChordToProgression(int scaleDegree);

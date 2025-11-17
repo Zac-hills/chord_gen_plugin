@@ -20,11 +20,6 @@ MainComponent::MainComponent() : keyboard(keyboardState, juce::MidiKeyboardCompo
     keyComboBox.onChange = [this] { keySelectionChanged(); };
     addAndMakeVisible(keyComboBox);
     
-    // Setup progressions dropdown (dummy)
-    progressionsDropdown.addItem("Progressions", 1);
-    progressionsDropdown.setSelectedId(1);
-    addAndMakeVisible(progressionsDropdown);
-    
     // Setup chord progression builder
     progressionBuilderLabel.setText("Build Your Progression:", juce::dontSendNotification);
     progressionBuilderLabel.setFont(juce::Font(14.0f, juce::Font::bold));
@@ -42,17 +37,6 @@ MainComponent::MainComponent() : keyboard(keyboardState, juce::MidiKeyboardCompo
     // Apply circular LookAndFeel to the root button (I)
     chordButtons[0].setLookAndFeel(&circularButtonLookAndFeel);
     
-    clearProgressionButton.setButtonText("Clear");
-    clearProgressionButton.onClick = [this] { clearCustomProgression(); };
-    addAndMakeVisible(clearProgressionButton);
-    
-    removeLastChordButton.setButtonText("Remove Last");
-    removeLastChordButton.onClick = [this] { removeLastChordFromProgression(); };
-    addAndMakeVisible(removeLastChordButton);
-    
-    customProgressionDisplayLabel.setText("Progression: (empty)", juce::dontSendNotification);
-    customProgressionDisplayLabel.setFont(juce::Font(16.0f, juce::Font::bold));
-    addAndMakeVisible(customProgressionDisplayLabel);
     
     
     // Add time signature combo box
@@ -74,18 +58,6 @@ MainComponent::MainComponent() : keyboard(keyboardState, juce::MidiKeyboardCompo
     
     timeSignatureLabel.setText("Time Signature:", juce::dontSendNotification);
     addAndMakeVisible(timeSignatureLabel);
-    
-    // Add waveform combo box
-    waveformComboBox.addItem("Sine Wave", 1);
-    waveformComboBox.addItem("Sawtooth", 2);
-    waveformComboBox.addItem("Square Wave", 3);
-    waveformComboBox.addItem("Triangle Wave", 4);
-    waveformComboBox.setSelectedId(1);
-    waveformComboBox.onChange = [this] { updateWaveform(); };
-    addAndMakeVisible(waveformComboBox);
-    
-    waveformLabel.setText("Waveform:", juce::dontSendNotification);
-    addAndMakeVisible(waveformLabel);
     
     progressionLabel.setText("Progression: ", juce::dontSendNotification);
     progressionLabel.setFont(juce::Font(16.0f, juce::Font::bold));
@@ -112,29 +84,36 @@ MainComponent::MainComponent() : keyboard(keyboardState, juce::MidiKeyboardCompo
     loopButton.onClick = [this] { shouldLoop = loopButton.getToggleState(); };
     addAndMakeVisible(loopButton);
     
-    tempoSlider.setRange(60.0, 200.0);
-    tempoSlider.setValue(120.0);
-    tempoSlider.setSliderStyle(juce::Slider::LinearHorizontal);
-    tempoSlider.setTextBoxStyle(juce::Slider::TextBoxRight, false, 60, 20);
-    addAndMakeVisible(tempoSlider);
+    // Setup tempo as an editable text field
+    tempoEditor.setText("120", juce::dontSendNotification);
+    tempoEditor.setEditable(true);
+    tempoEditor.setJustificationType(juce::Justification::centred);
+    tempoEditor.onTextChange = [this]() {
+        int tempo = tempoEditor.getText().getIntValue();
+        if (tempo >= 60 && tempo <= 200) {
+            updateChordDuration();
+        }
+    };
+    addAndMakeVisible(tempoEditor);
     
     tempoLabel.setText("Tempo (BPM):", juce::dontSendNotification);
     addAndMakeVisible(tempoLabel);
     
-    emotionLabel.setText("Apply Emotion:", juce::dontSendNotification);
-    addAndMakeVisible(emotionLabel);
-    
-    emotionComboBox.onChange = [this] { updateEmotionDescription(); };
-    addAndMakeVisible(emotionComboBox);
+    // Setup emotion buttons
+    for (int i = 0; i < 24; ++i)
+    {
+        emotionButtons[i].onClick = [this, i]() {
+            selectedEmotionIndex = i;
+            updateEmotionDescription();
+            applyEmotionToChord();
+        };
+        addAndMakeVisible(emotionButtons[i]);
+    }
     
     emotionDescriptionLabel.setText("", juce::dontSendNotification);
     emotionDescriptionLabel.setFont(juce::Font(12.0f, juce::Font::italic));
     emotionDescriptionLabel.setJustificationType(juce::Justification::centred);
     addAndMakeVisible(emotionDescriptionLabel);
-    
-    applyEmotionButton.setButtonText("Apply");
-    applyEmotionButton.onClick = [this] { applyEmotionToChord(); };
-    addAndMakeVisible(applyEmotionButton);
     
     emotionWheelGroup.setText("Emotion Wheel");
     emotionWheelGroup.setTextLabelPosition(juce::Justification::centredTop);
@@ -144,10 +123,6 @@ MainComponent::MainComponent() : keyboard(keyboardState, juce::MidiKeyboardCompo
     progressionBuilderGroup.setText("Chord Progression Builder");
     progressionBuilderGroup.setTextLabelPosition(juce::Justification::centredTop);
     addAndMakeVisible(progressionBuilderGroup);
-    
-    refinementGroup.setText("Refinement");
-    refinementGroup.setTextLabelPosition(juce::Justification::centredTop);
-    addAndMakeVisible(refinementGroup);
     
     // Initialize progression badge buttons
     for (int i = 0; i < MAX_PROGRESSION_SIZE; ++i)
@@ -482,15 +457,34 @@ void MainComponent::resized()
 {
     auto bounds = getLocalBounds();
     
-    // Audio settings button in title bar (top right) - use absolute positioning
-    auto settingsButtonBounds = juce::Rectangle<int>(getWidth() - 45, 5, 35, 20);
-    audioSettingsButton.setBounds(settingsButtonBounds);
-    
     // Title bar area
     bounds.removeFromTop(30);  // Title bar height
     
-    // Add some spacing after title bar
-    bounds.removeFromTop(30);
+    // Top control bar with settings, key, time signature, and tempo
+    auto topControlBar = bounds.removeFromTop(40);
+    topControlBar.reduce(10, 5);  // Add padding
+    
+    // Settings button on far left
+    audioSettingsButton.setBounds(topControlBar.removeFromLeft(50).reduced(5));
+    
+    topControlBar.removeFromLeft(20);  // Spacing
+    
+    // Key dropdown
+    keyComboBox.setBounds(topControlBar.removeFromLeft(120).reduced(5));
+    
+    topControlBar.removeFromLeft(10);  // Spacing
+    
+    // Time signature dropdown
+    timeSignatureComboBox.setBounds(topControlBar.removeFromLeft(100).reduced(5));
+    
+    topControlBar.removeFromLeft(10);  // Spacing
+    
+    // Tempo field
+    tempoLabel.setBounds(topControlBar.removeFromLeft(90).reduced(5));
+    tempoEditor.setBounds(topControlBar.removeFromLeft(60).reduced(5));
+    
+    // Add some spacing after top bar
+    bounds.removeFromTop(10);
     
     // Add outer padding to prevent borders from touching window edges
     bounds.reduce(10, 0);
@@ -507,11 +501,11 @@ void MainComponent::resized()
     
     auto builderContent = builderGroupBounds.reduced(15, 25);  // Reduce for group border and title
     
-    // Key and Progressions at the top of builder group - far left and far right
-    auto keyProgressionsRow = builderContent.removeFromTop(35);
-    keyComboBox.setBounds(keyProgressionsRow.removeFromLeft(150).reduced(5));
-    keyProgressionsRow.removeFromRight(0);  // Skip middle space
-    progressionsDropdown.setBounds(keyProgressionsRow.removeFromRight(150).reduced(5));
+    // Progressions dropdown at the top of builder group - centered
+    auto progressionsRow = builderContent.removeFromTop(35);
+    int progressionsWidth = 150;
+    int progressionsCenterX = progressionsRow.getCentreX();
+    progressionsDropdown.setBounds(progressionsCenterX - progressionsWidth/2, progressionsRow.getY(), progressionsWidth, progressionsRow.getHeight());
     
     builderContent.removeFromTop(20);  // Increased spacing
     
@@ -540,65 +534,39 @@ void MainComponent::resized()
     
     builderContent.removeFromTop(20);  // Increased spacing
     
-    // Control buttons for progression - far left and far right
-    auto progressionControlRow = builderContent.removeFromTop(35);
-    clearProgressionButton.setBounds(progressionControlRow.removeFromLeft(100).reduced(5));
-    progressionControlRow.removeFromRight(0);  // Skip middle space
-    removeLastChordButton.setBounds(progressionControlRow.removeFromRight(120).reduced(5));
-    
-    builderContent.removeFromTop(10);
-    
-    // Right column: Refinement Group
-    auto refinementGroupBounds = rightColumn.removeFromTop(350);
-    refinementGroup.setBounds(refinementGroupBounds);
-    
-    auto refinementContent = refinementGroupBounds.reduced(15, 25);  // Reduce for group border and title
-    
-    // Stack components vertically in refinement group
-    // Tempo
-    auto tempoRow = refinementContent.removeFromTop(55);
-    tempoLabel.setBounds(tempoRow.removeFromTop(20).reduced(5, 0));
-    tempoSlider.setBounds(tempoRow.reduced(5, 0));
-    
-    refinementContent.removeFromTop(5);
-    
-    // Time Signature
-    auto timeSignatureRow = refinementContent.removeFromTop(55);
-    timeSignatureLabel.setBounds(timeSignatureRow.removeFromTop(20).reduced(5, 0));
-    timeSignatureComboBox.setBounds(timeSignatureRow.reduced(5, 0));
-    
-    refinementContent.removeFromTop(5);
-    
-    refinementContent.removeFromTop(5);
-    
-    // Waveform
-    auto waveformRow = refinementContent.removeFromTop(55);
-    waveformLabel.setBounds(waveformRow.removeFromTop(20).reduced(5, 0));
-    waveformComboBox.setBounds(waveformRow.reduced(5, 0));
-    
-    // Back to full width for remaining components
-    bounds = getLocalBounds();
-    bounds.removeFromTop(30 + 30 + 350 + 20);  // Skip title, spacing, groups, and gap
-    bounds.reduce(10, 0);  // Add outer padding
-    
-    // Emotion Wheel section
-    auto emotionWheelSection = bounds.removeFromTop(140);  // Increased from 120 to 140
+    // Right column: Emotion Wheel Group
+    auto emotionWheelSection = rightColumn.removeFromTop(350);
     emotionWheelGroup.setBounds(emotionWheelSection);
     
     auto emotionContent = emotionWheelSection.reduced(15, 25);  // Reduce for group border and title
     
     emotionContent.removeFromTop(5);  // Top padding
     
-    // First row: Emotion selector
-    auto emotionRow = emotionContent.removeFromTop(30);
-    emotionLabel.setBounds(emotionRow.removeFromLeft(120));
-    emotionComboBox.setBounds(emotionRow.removeFromLeft(280).reduced(5, 0));
-    applyEmotionButton.setBounds(emotionRow.removeFromLeft(100).reduced(10, 0));
+    // Emotion buttons in a 6×4 grid (6 columns = 6 categories, 4 rows = 4 variants each)
+    auto buttonGridArea = emotionContent.removeFromTop(200);  // Space for 4 rows of buttons
+    int buttonWidth = buttonGridArea.getWidth() / 6;  // 6 columns
+    int buttonHeight = 50;  // Height for each button
     
-    // Third row: Description (increased height)
+    for (int col = 0; col < 6; ++col)
+    {
+        for (int row = 0; row < 4; ++row)
+        {
+            int index = col * 4 + row;
+            int x = buttonGridArea.getX() + col * buttonWidth;
+            int y = buttonGridArea.getY() + row * buttonHeight;
+            emotionButtons[index].setBounds(x + 2, y + 2, buttonWidth - 4, buttonHeight - 4);
+        }
+    }
+    
+    emotionContent.removeFromTop(5);  // Spacing
+    
+    // Description at the bottom
     emotionDescriptionLabel.setBounds(emotionContent.removeFromTop(40));
     
-    bounds.removeFromTop(20);
+    // Back to full width for remaining components
+    bounds = getLocalBounds();
+    bounds.removeFromTop(30 + 40 + 10 + 350 + 20);  // Skip title, top control bar, spacing, groups, and gap
+    bounds.reduce(10, 0);  // Add outer padding
     
     // Chord progression badge buttons area at the bottom with play buttons to the right
     auto progressionArea = bounds.removeFromBottom(160);
@@ -613,8 +581,8 @@ void MainComponent::resized()
     
     // Layout badge buttons horizontally in the progression area
     auto badgeButtonArea = progressionArea.reduced(20, 40);  // Add padding
-    int buttonWidth = 90;
-    int buttonHeight = 70;
+    int badgeButtonWidth = 90;
+    int badgeButtonHeight = 70;
     int spacing = 10;
     int numButtons = std::min(static_cast<int>(customProgressionDegrees.size()), static_cast<int>(MAX_PROGRESSION_SIZE));
     
@@ -622,9 +590,9 @@ void MainComponent::resized()
     {
         if (i < numButtons && chordButtonsWithBadges[i] != nullptr)
         {
-            int x = badgeButtonArea.getX() + i * (buttonWidth + spacing);
+            int x = badgeButtonArea.getX() + i * (badgeButtonWidth + spacing);
             int y = badgeButtonArea.getY();
-            chordButtonsWithBadges[i]->setBounds(x, y, buttonWidth, buttonHeight);
+            chordButtonsWithBadges[i]->setBounds(x, y, badgeButtonWidth, badgeButtonHeight);
         }
     }
     
@@ -702,7 +670,9 @@ void MainComponent::updateTimeSignature()
 void MainComponent::updateChordDuration()
 {
     // Update samples per beat based on the beat unit
-    double currentTempo = tempoSlider.getValue();
+    double currentTempo = tempoEditor.getText().getIntValue();
+    if (currentTempo < 60) currentTempo = 60;
+    if (currentTempo > 200) currentTempo = 200;
     
     // Calculate samples per beat (quarter note)
     double quarterNoteDuration = 60.0 / currentTempo;
@@ -714,29 +684,7 @@ void MainComponent::updateChordDuration()
     samplesPerBeat = static_cast<int>(beatDuration * beatsPerMeasure * sampleRate);
 }
 
-void MainComponent::updateWaveform()
-{
-    WaveformType waveform = WaveformType::Sine;
-    
-    int selectedId = waveformComboBox.getSelectedId();
-    switch (selectedId)
-    {
-        case 1: waveform = WaveformType::Sine; break;
-        case 2: waveform = WaveformType::Sawtooth; break;
-        case 3: waveform = WaveformType::Square; break;
-        case 4: waveform = WaveformType::Triangle; break;
-        default: waveform = WaveformType::Sine; break;
-    }
-    
-    // Update all synth voices with the new waveform
-    for (int i = 0; i < synth.getNumVoices(); ++i)
-    {
-        if (auto* voice = dynamic_cast<SineWaveVoice*>(synth.getVoice(i)))
-        {
-            voice->setWaveform(waveform);
-        }
-    }
-}
+
 
 //==============================================================================
 // MIDI Playback Methods
@@ -1095,34 +1043,33 @@ void MainComponent::updateChordSelector()
 {
     if (customProgressionDegrees.empty())
     {
-        emotionComboBox.setEnabled(false);
-        applyEmotionButton.setEnabled(false);
+        for (auto& btn : emotionButtons)
+            btn.setEnabled(false);
         emotionDescriptionLabel.setText("Build a progression first", juce::dontSendNotification);
         return;
     }
     
-    // If there's a valid selection, enable controls
+    // If there's a valid selection, populate emotion buttons
     if (selectedChordIndexForEmotion >= 0 && selectedChordIndexForEmotion < customProgressionDegrees.size())
     {
-        emotionComboBox.setEnabled(true);
-        applyEmotionButton.setEnabled(true);
+        updateEmotionComboBox();
     }
     else
     {
-        emotionComboBox.setEnabled(false);
-        applyEmotionButton.setEnabled(false);
+        for (auto& btn : emotionButtons)
+            btn.setEnabled(false);
         emotionDescriptionLabel.setText("Click a chord to select it", juce::dontSendNotification);
     }
 }
 
 void MainComponent::updateEmotionComboBox()
 {
-    emotionComboBox.clear();
     
     if (selectedChordIndexForEmotion < 0 || selectedChordIndexForEmotion >= customProgressionDegrees.size())
     {
-        emotionComboBox.setEnabled(false);
-        applyEmotionButton.setEnabled(false);
+        // Disable all emotion buttons
+        for (auto& btn : emotionButtons)
+            btn.setEnabled(false);
         return;
     }
     
@@ -1154,24 +1101,27 @@ void MainComponent::updateEmotionComboBox()
         }
     }
     
-    // Get emotions for this tonality
+    // Get emotions for this tonality and populate buttons
     auto emotions = emotionWheel.getEmotionsByTonality(tonality);
     
-    for (size_t i = 0; i < emotions.size(); ++i)
+    for (size_t i = 0; i < 24; ++i)
     {
-        auto emotion = emotions[i];
-        juce::String emotionName = EmotionWheel::getEmotionName(emotion);
-        emotionComboBox.addItem(emotionName, static_cast<int>(i + 1));
+        if (i < emotions.size())
+        {
+            auto emotion = emotions[i];
+            juce::String emotionName = EmotionWheel::getEmotionName(emotion);
+            emotionButtons[i].setButtonText(emotionName);
+            emotionButtons[i].setEnabled(true);
+        }
+        else
+        {
+            emotionButtons[i].setButtonText("");
+            emotionButtons[i].setEnabled(false);
+        }
     }
     
-    emotionComboBox.setEnabled(true);
-    applyEmotionButton.setEnabled(true);
-    
-    if (emotionComboBox.getNumItems() > 0)
-    {
-        emotionComboBox.setSelectedId(1);
-        updateEmotionDescription();
-    }
+    selectedEmotionIndex = -1;
+    emotionDescriptionLabel.setText("", juce::dontSendNotification);
 }
 
 void MainComponent::updateEmotionDescription()
@@ -1182,7 +1132,6 @@ void MainComponent::updateEmotionDescription()
         return;
     }
     
-    int selectedEmotionIndex = emotionComboBox.getSelectedId() - 1;
     if (selectedEmotionIndex < 0)
     {
         emotionDescriptionLabel.setText("", juce::dontSendNotification);
@@ -1233,7 +1182,6 @@ void MainComponent::applyEmotionToChord()
     if (selectedChordIndexForEmotion < 0 || selectedChordIndexForEmotion >= customProgressionDegrees.size())
         return;
     
-    int selectedEmotionIndex = emotionComboBox.getSelectedId() - 1;
     if (selectedEmotionIndex < 0)
         return;
     
