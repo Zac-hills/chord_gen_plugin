@@ -124,8 +124,10 @@ public:
     void startNote(int midiNoteNumber, float velocity, juce::SynthesiserSound*, int) override
     {
         frequency = juce::MidiMessage::getMidiNoteInHertz(midiNoteNumber);
-        level = velocity * 0.15;
+        level = velocity * 0.3;
         tailOff = 0.0;
+        envelope = 1.0;
+        sampleCount = 0;
         
         auto cyclesPerSample = frequency / getSampleRate();
         angleDelta = cyclesPerSample * 2.0 * juce::MathConstants<double>::pi;
@@ -156,15 +158,16 @@ public:
             {
                 while (--numSamples >= 0)
                 {
-                    auto currentSample = (float)(generateWaveform(currentAngle) * level * tailOff);
+                    auto currentSample = (float)(generatePianoSound(currentAngle) * level * tailOff);
                     
                     for (auto i = outputBuffer.getNumChannels(); --i >= 0;)
                         outputBuffer.addSample(i, startSample, currentSample);
                     
                     currentAngle += angleDelta;
                     ++startSample;
+                    sampleCount++;
                     
-                    tailOff *= 0.99;
+                    tailOff *= 0.9995; // Slower release for piano-like sustain
                     
                     if (tailOff <= 0.005)
                     {
@@ -178,19 +181,47 @@ public:
             {
                 while (--numSamples >= 0)
                 {
-                    auto currentSample = (float)(generateWaveform(currentAngle) * level);
+                    // Piano-like envelope: fast attack, exponential decay
+                    double attackTime = 0.002 * getSampleRate(); // 2ms attack
+                    double decayTime = 0.5 * getSampleRate(); // 500ms decay
+                    
+                    if (sampleCount < attackTime)
+                    {
+                        envelope = sampleCount / attackTime;
+                    }
+                    else
+                    {
+                        double decayPhase = (sampleCount - attackTime) / decayTime;
+                        envelope = 0.3 + 0.7 * std::exp(-3.0 * decayPhase); // Decay to 30% sustain level
+                    }
+                    
+                    auto currentSample = (float)(generatePianoSound(currentAngle) * level * envelope);
                     
                     for (auto i = outputBuffer.getNumChannels(); --i >= 0;)
                         outputBuffer.addSample(i, startSample, currentSample);
                     
                     currentAngle += angleDelta;
                     ++startSample;
+                    sampleCount++;
                 }
             }
         }
     }
 
 private:
+    double generatePianoSound(double angle)
+    {
+        // Piano-like sound: fundamental + harmonics with decreasing amplitudes
+        double fundamental = std::sin(angle);
+        double harmonic2 = 0.5 * std::sin(2.0 * angle);
+        double harmonic3 = 0.25 * std::sin(3.0 * angle);
+        double harmonic4 = 0.125 * std::sin(4.0 * angle);
+        double harmonic5 = 0.0625 * std::sin(5.0 * angle);
+        
+        // Mix harmonics for piano-like timbre
+        return (fundamental + harmonic2 + harmonic3 + harmonic4 + harmonic5) / 2.0;
+    }
+    
     double generateWaveform(double angle)
     {
         // Normalize angle to 0-2π range
@@ -226,6 +257,8 @@ private:
     WaveformType waveformType;
     double currentAngle = 0.0, angleDelta = 0.0, level = 0.0, tailOff = 0.0;
     double frequency = 0.0;
+    double envelope = 0.0;
+    int sampleCount = 0;
 };
 
 //==============================================================================
@@ -362,6 +395,7 @@ private:
     std::vector<int> currentChordNotes;
     std::vector<int> customProgressionDegrees;  // Stores the scale degrees (1-7) for custom progression
     std::vector<EmotionWheel::Emotion> customProgressionEmotions;  // Stores applied emotions (parallel to customProgressionDegrees)
+    std::vector<bool> hasEmotionApplied;  // Tracks which chords actually have emotions applied
     int selectedChordIndexForEmotion = -1;  // Track which chord is selected for emotion editing
 
     

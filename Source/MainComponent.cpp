@@ -726,7 +726,7 @@ void MainComponent::playProgression()
             std::vector<int> chord;
             
             // Check if this chord has an emotion applied
-            if (i < customProgressionEmotions.size())
+            if (i < hasEmotionApplied.size() && hasEmotionApplied[i] && i < customProgressionEmotions.size())
             {
                 auto emotion = customProgressionEmotions[i];
                 
@@ -822,6 +822,10 @@ void MainComponent::stopCurrentChord()
 
 void MainComponent::mouseEnter(const juce::MouseEvent& event)
 {
+    // Disable hover sounds when progression is playing
+    if (isPlaying)
+        return;
+    
     // Check if the mouse is over one of the chord buttons
     for (int i = 0; i < 7; ++i)
     {
@@ -911,6 +915,10 @@ void MainComponent::mouseEnter(const juce::MouseEvent& event)
 
 void MainComponent::mouseExit(const juce::MouseEvent& event)
 {
+    // Don't stop hover sounds when progression is playing
+    if (isPlaying)
+        return;
+    
     // Check if the mouse is leaving one of the chord buttons
     for (int i = 0; i < 7; ++i)
     {
@@ -1099,17 +1107,20 @@ void MainComponent::detectSystemAudioDevices()
 
 void MainComponent::addChordToProgression(int scaleDegree)
 {
-    // If at max capacity and a chord is selected, replace the selected chord
-    if (customProgressionDegrees.size() >= MAX_PROGRESSION_SIZE && 
-        selectedChordIndexForEmotion >= 0 && 
+    // If a chord is selected, replace it
+    if (selectedChordIndexForEmotion >= 0 && 
         selectedChordIndexForEmotion < customProgressionDegrees.size())
     {
         customProgressionDegrees[selectedChordIndexForEmotion] = scaleDegree;
-        // Reset to default emotion for the replaced chord
-        if (selectedChordIndexForEmotion < customProgressionEmotions.size())
+        
+        // Clear the emotion for the replaced chord
+        if (selectedChordIndexForEmotion < hasEmotionApplied.size())
         {
-            customProgressionEmotions[selectedChordIndexForEmotion] = EmotionWheel::Emotion::Happy_Maj6;
+            hasEmotionApplied[selectedChordIndexForEmotion] = false;
         }
+        
+        // Deselect after replacing
+        selectedChordIndexForEmotion = -1;
     }
     // Otherwise, add if under max capacity
     else if (customProgressionDegrees.size() < MAX_PROGRESSION_SIZE)
@@ -1157,6 +1168,9 @@ void MainComponent::removeChordAtIndex(int index)
         if (index < customProgressionEmotions.size())
             customProgressionEmotions.erase(customProgressionEmotions.begin() + index);
         
+        if (index < hasEmotionApplied.size())
+            hasEmotionApplied.erase(hasEmotionApplied.begin() + index);
+        
         // If the removed chord was selected, clear the selection
         if (index == selectedChordIndexForEmotion)
         {
@@ -1192,10 +1206,22 @@ void MainComponent::updateCustomProgressionDisplay()
             if (i < customProgressionDegrees.size())
             {
                 // Show and update button
-                int degree = customProgressionDegrees[i];
-                auto scaleDegree = static_cast<KeyManager::ScaleDegree>(degree);
-                auto chordType = useSevenths ? keyManager.analyzeSeventh(scaleDegree) : keyManager.analyzeTriad(scaleDegree);
-                std::string chordName = keyManager.getChordName(scaleDegree, chordType);
+                std::string chordName;
+                
+                // Check if this chord has an applied emotion
+                if (i < hasEmotionApplied.size() && hasEmotionApplied[i] && i < customProgressionEmotions.size())
+                {
+                    // Use the emotion chord name
+                    chordName = EmotionWheel::getEmotionName(customProgressionEmotions[i]);
+                }
+                else
+                {
+                    // Use the default chord name from scale degree
+                    int degree = customProgressionDegrees[i];
+                    auto scaleDegree = static_cast<KeyManager::ScaleDegree>(degree);
+                    auto chordType = useSevenths ? keyManager.analyzeSeventh(scaleDegree) : keyManager.analyzeTriad(scaleDegree);
+                    chordName = keyManager.getChordName(scaleDegree, chordType);
+                }
                 
                 chordButtonsWithBadges[i]->mainButton.setButtonText(juce::String(chordName));
                 chordButtonsWithBadges[i]->setVisible(true);
@@ -1227,14 +1253,37 @@ void MainComponent::updateCustomProgressionDisplay()
 void MainComponent::updateChordButtonLabels()
 {
     const juce::StringArray romanNumerals = { "I", "II", "III", "IV", "V", "VI", "VII" };
+    const juce::StringArray romanNumeralsMinor = { "i", "ii", "iii", "iv", "v", "vi", "vii" };
     auto scaleNotes = keyManager.getScaleNoteNames();
+    bool useSevenths = chordTypeComboBox.getSelectedId() == 2;
     
     for (int i = 0; i < 7; ++i)
     {
         if (i < scaleNotes.size())
         {
-            juce::String buttonText = romanNumerals[i] + "\n" + juce::String(scaleNotes[i]);
-            chordButtons[i].setButtonText(buttonText);
+            auto scaleDegree = static_cast<KeyManager::ScaleDegree>(i + 1);
+            auto chordType = useSevenths ? keyManager.analyzeSeventh(scaleDegree) : keyManager.analyzeTriad(scaleDegree);
+            
+            // Determine if the chord is minor or diminished
+            bool isMinor = false;
+            if (useSevenths)
+            {
+                isMinor = (chordType == KeyManager::ChordType::Minor7 ||
+                          chordType == KeyManager::ChordType::Minor9 ||
+                          chordType == KeyManager::ChordType::HalfDiminished7 ||
+                          chordType == KeyManager::ChordType::Diminished7);
+            }
+            else
+            {
+                isMinor = (chordType == KeyManager::ChordType::Minor ||
+                          chordType == KeyManager::ChordType::Diminished);
+            }
+            
+            juce::String noteName = juce::String(scaleNotes[i]);
+            if (isMinor)
+                noteName += "m";
+            
+            chordButtons[i].setButtonText(noteName);
         }
     }
 }
@@ -1247,8 +1296,15 @@ void MainComponent::selectChordForEmotionWheel(int chordIndex)
     if (chordIndex < 0 || chordIndex >= customProgressionDegrees.size())
         return;
     
-    // Store the selected chord index
-    selectedChordIndexForEmotion = chordIndex;
+    // Toggle: if clicking the already selected chord, deselect it
+    if (selectedChordIndexForEmotion == chordIndex)
+    {
+        selectedChordIndexForEmotion = -1; // Deselect
+    }
+    else
+    {
+        selectedChordIndexForEmotion = chordIndex; // Select new chord
+    }
     
     // Update button highlighting
     const auto& colors = themeManager.getColors();
@@ -1256,7 +1312,7 @@ void MainComponent::selectChordForEmotionWheel(int chordIndex)
     {
         if (chordButtonsWithBadges[i] != nullptr)
         {
-            if (i == chordIndex)
+            if (i == selectedChordIndexForEmotion)
             {
                 // Highlight selected button
                 chordButtonsWithBadges[i]->mainButton.setColour(juce::TextButton::buttonColourId, colors.accentPrimary);
@@ -1453,16 +1509,21 @@ void MainComponent::applyEmotionToChord()
     
     auto emotion = emotions[selectedEmotionIndex];
     
-    // Resize customProgressionEmotions if needed
-    while (customProgressionEmotions.size() < customProgressionDegrees.size())
+    // Ensure vectors are large enough
+    if (customProgressionEmotions.size() <= selectedChordIndexForEmotion)
     {
-        customProgressionEmotions.push_back(EmotionWheel::Emotion::Happy_Maj6);  // Default
+        customProgressionEmotions.resize(customProgressionDegrees.size(), EmotionWheel::Emotion::Happy_Maj6);
+    }
+    if (hasEmotionApplied.size() <= selectedChordIndexForEmotion)
+    {
+        hasEmotionApplied.resize(customProgressionDegrees.size(), false);
     }
     
-    // Store the emotion for this chord
+    // Store the emotion for this chord and mark it as applied
     customProgressionEmotions[selectedChordIndexForEmotion] = emotion;
+    hasEmotionApplied[selectedChordIndexForEmotion] = true;
     
-    // Update display to show the change
+    // Update display to show the change (this will update the button text)
     updateCustomProgressionDisplay();
     
     // If currently playing, restart with the new emotion applied
