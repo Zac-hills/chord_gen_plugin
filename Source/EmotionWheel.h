@@ -19,19 +19,19 @@ public:
         Happy_Min6,
         Happy_Min69,
         Happy_Dorian9,
-        Happy_MinMaj9,
+        Happy_MinAdd9,
         
         // Sad/Major emotions
         Sad_Maj7b6,
         Sad_Maj7add9,
         Sad_Maj9sus4,
-        Sad_Maj7b9,
+        Sad_MajAdd4,
         
         // Sad/Minor emotions
         Sad_Min7,
-        Sad_Min9,
-        Sad_Min11,
-        Sad_MinAdd9,
+        Sad_MinAdd11,
+        Sad_Min7Add9,
+        Sad_MinMaj7,
         
         // Warm/Major emotions
         Warm_Maj7,
@@ -40,10 +40,10 @@ public:
         Warm_Maj13,
         
         // Warm/Minor emotions
-        Warm_Min7,
         Warm_Min9,
-        Warm_Min69,
         Warm_Min11,
+        Warm_Min69,
+        Warm_Min13no11,
         
         // Tense/Major emotions
         Tense_7sus4,
@@ -52,10 +52,10 @@ public:
         Tense_7alt,
         
         // Tense/Minor emotions
+        Tense_MinAddFlat2,
         Tense_Min7b5,
         Tense_Min7b9,
-        Tense_Min7sharp11,
-        Tense_Dim7,
+        Tense_Min7b9b13,
         
         // Calm/Major emotions
         Calm_Sus2,
@@ -65,21 +65,21 @@ public:
         
         // Calm/Minor emotions
         Calm_MinAdd9,
-        Calm_Min69no5,
-        Calm_Min11no7,
-        Calm_Spread5ths9ths,
+        Calm_MinAdd2no3,
+        Calm_Min7no5,
+        Calm_MinQuartal,
         
         // Dark/Major emotions
-        Dark_Maj7sharp11,
+        Dark_MajorMinMaj7,
         Dark_Maj7b13,
         Dark_Maj7b9,
         Dark_7b9b13,
         
         // Dark/Minor emotions
-        Dark_Min7,
-        Dark_Min6,
-        Dark_Min7b9,
-        Dark_MinMaj7b6
+        Dark_MinorMaj7,
+        Dark_MinorMaj7Add9,
+        Dark_Min7b13,
+        Dark_Min7b9b13
     };
     
     enum class Tonality
@@ -183,47 +183,47 @@ public:
             case Emotion::Happy_Min6: return "Happy (Min6)";
             case Emotion::Happy_Min69: return "Happy (Min6/9)";
             case Emotion::Happy_Dorian9: return "Happy (Dorian9)";
-            case Emotion::Happy_MinMaj9: return "Happy (Min(maj9))";
+            case Emotion::Happy_MinAdd9: return "Happy (Min(add9))";
             case Emotion::Sad_Maj7b6: return "Sad (Maj7b6)";
             case Emotion::Sad_Maj7add9: return "Sad (Maj7add9)";
             case Emotion::Sad_Maj9sus4: return "Sad (Maj9sus4)";
-            case Emotion::Sad_Maj7b9: return "Sad (Maj7b9)";
+            case Emotion::Sad_MajAdd4: return "Sad (Maj(add4))";
             case Emotion::Sad_Min7: return "Sad (Min7)";
-            case Emotion::Sad_Min9: return "Sad (Min9)";
-            case Emotion::Sad_Min11: return "Sad (Min11)";
-            case Emotion::Sad_MinAdd9: return "Sad (Min(add9))";
+            case Emotion::Sad_MinAdd11: return "Sad (Min(add11))";
+            case Emotion::Sad_Min7Add9: return "Sad (Min7(add9))";
+            case Emotion::Sad_MinMaj7: return "Sad (Min(maj7))";
             case Emotion::Warm_Maj7: return "Warm (Maj7)";
             case Emotion::Warm_Maj9: return "Warm (Maj9)";
             case Emotion::Warm_69: return "Warm (6/9)";
             case Emotion::Warm_Maj13: return "Warm (Maj13)";
-            case Emotion::Warm_Min7: return "Warm (Min7)";
             case Emotion::Warm_Min9: return "Warm (Min9)";
-            case Emotion::Warm_Min69: return "Warm (Min6/9)";
             case Emotion::Warm_Min11: return "Warm (Min11)";
+            case Emotion::Warm_Min69: return "Warm (Min6/9)";
+            case Emotion::Warm_Min13no11: return "Warm (Min13(no11))";
             case Emotion::Tense_7sus4: return "Tense (7sus4)";
             case Emotion::Tense_7b9: return "Tense (7♭9)";
             case Emotion::Tense_7sharp9: return "Tense (7#9)";
             case Emotion::Tense_7alt: return "Tense (7alt)";
+            case Emotion::Tense_MinAddFlat2: return "Tense (Min(add♭2))";
             case Emotion::Tense_Min7b5: return "Tense (Min7♭5)";
             case Emotion::Tense_Min7b9: return "Tense (Min7♭9)";
-            case Emotion::Tense_Min7sharp11: return "Tense (Min7#11)";
-            case Emotion::Tense_Dim7: return "Tense (Dim7)";
+            case Emotion::Tense_Min7b9b13: return "Tense (Min7♭9♭13)";
             case Emotion::Calm_Sus2: return "Calm (Sus2)";
             case Emotion::Calm_69no3: return "Calm (6/9(no3))";
             case Emotion::Calm_Sus4add9: return "Calm (Sus4add9)";
             case Emotion::Calm_Quartal: return "Calm (Quartal)";
             case Emotion::Calm_MinAdd9: return "Calm (Min(add9))";
-            case Emotion::Calm_Min69no5: return "Calm (Min6/9(no5))";
-            case Emotion::Calm_Min11no7: return "Calm (Min11(no7))";
-            case Emotion::Calm_Spread5ths9ths: return "Calm (Spread 5ths/9ths)";
-            case Emotion::Dark_Maj7sharp11: return "Dark (Maj7♯11)";
+            case Emotion::Calm_MinAdd2no3: return "Calm (Min(add2 no3))";
+            case Emotion::Calm_Min7no5: return "Calm (Min7(no5))";
+            case Emotion::Calm_MinQuartal: return "Calm (Quartal)";
+            case Emotion::Dark_MajorMinMaj7: return "Dark (mMaj7)";
             case Emotion::Dark_Maj7b13: return "Dark (Maj7♭13)";
             case Emotion::Dark_Maj7b9: return "Dark (Maj7♭9)";
             case Emotion::Dark_7b9b13: return "Dark (7♭9♭13)";
-            case Emotion::Dark_Min7: return "Dark (Min7)";
-            case Emotion::Dark_Min6: return "Dark (Min6)";
-            case Emotion::Dark_Min7b9: return "Dark (Min7♭9)";
-            case Emotion::Dark_MinMaj7b6: return "Dark (Min(maj7♭6))";
+            case Emotion::Dark_MinorMaj7: return "Dark (Min(maj7))";
+            case Emotion::Dark_MinorMaj7Add9: return "Dark (Min(maj7)(add9))";
+            case Emotion::Dark_Min7b13: return "Dark (Min7♭13)";
+            case Emotion::Dark_Min7b9b13: return "Dark (Min7♭9♭13))";
             default: return "Unknown";
         }
     }
@@ -286,10 +286,10 @@ private:
             "Modal brightness"
         };
         
-        emotionProfiles[Emotion::Happy_MinMaj9] = {
-            "Happy (Min(maj9))",
+        emotionProfiles[Emotion::Happy_MinAdd9] = {
+            "Happy (Min(add9))",
             Tonality::Minor,
-            {0, 3, 7, 11, 14},  // R, m3, 5, M7, 9
+            {0, 3, 7, 14},  // R, m3, 5, 9
             "Introspective joy"
         };
         
@@ -315,11 +315,11 @@ private:
             "Suspended sorrow"
         };
         
-        emotionProfiles[Emotion::Sad_Maj7b9] = {
-            "Sad (Maj7b9)",
+        emotionProfiles[Emotion::Sad_MajAdd4] = {
+            "Sad (Maj(add4))",
             Tonality::Major,
-            {0, 4, 7, 11, 13},  // R, M3, 5, M7, b9
-            "Tense sadness"
+            {0, 4, 5, 7},  // R, M3, 4, 5
+            "Suspended longing"
         };
         
         // Sad/Minor chord emotions
@@ -330,24 +330,24 @@ private:
             "Classic sadness and melancholy"
         };
         
-        emotionProfiles[Emotion::Sad_Min9] = {
-            "Sad (Min9)",
+        emotionProfiles[Emotion::Sad_MinAdd11] = {
+            "Sad (Min(add11))",
             Tonality::Minor,
-            {0, 3, 7, 10, 14},  // R, m3, 5, b7, 9
+            {0, 3, 7, 17},  // R, m3, 5, 11
             "Deep introspective sorrow"
         };
         
-        emotionProfiles[Emotion::Sad_Min11] = {
-            "Sad (Min11)",
+        emotionProfiles[Emotion::Sad_Min7Add9] = {
+            "Sad (Min7(add9))",
             Tonality::Minor,
-            {0, 3, 7, 10, 17},  // R, m3, 5, b7, 11
+            {0, 3, 7, 10, 14},  // R, m3, 5, b7, 9
             "Contemplative and heavy"
         };
         
-        emotionProfiles[Emotion::Sad_MinAdd9] = {
-            "Sad (Min(add9))",
+        emotionProfiles[Emotion::Sad_MinMaj7] = {
+            "Sad (Min(maj7))",
             Tonality::Minor,
-            {0, 3, 7, 14},  // R, m3, 5, 9
+            {0, 3, 7, 11},  // R, m3, 5, M7
             "Gentle sadness with hope"
         };
         
@@ -381,13 +381,6 @@ private:
         };
         
         // Warm/Minor chord emotions
-        emotionProfiles[Emotion::Warm_Min7] = {
-            "Warm (Min7)",
-            Tonality::Minor,
-            {0, 3, 7, 10},  // R, m3, 5, b7
-            "Gentle and comforting"
-        };
-        
         emotionProfiles[Emotion::Warm_Min9] = {
             "Warm (Min9)",
             Tonality::Minor,
@@ -407,6 +400,13 @@ private:
             Tonality::Minor,
             {0, 3, 7, 10, 17},  // R, m3, 5, b7, 11
             "Embracing warmth"
+        };
+        
+        emotionProfiles[Emotion::Warm_Min13no11] = {
+            "Warm (Min13(no11))",
+            Tonality::Minor,
+            {0, 3, 7, 10, 14, 21},  // R, m3, 5, b7, 9, 13
+            "Rich warmth"
         };
         
         // Tense/Major chord emotions
@@ -439,6 +439,13 @@ private:
         };
         
         // Tense/Minor chord emotions
+        emotionProfiles[Emotion::Tense_MinAddFlat2] = {
+            "Tense (Min(add♭2))",
+            Tonality::Minor,
+            {0, 1, 3, 7},  // R, b2, m3, 5
+            "Jarring dissonance"
+        };
+        
         emotionProfiles[Emotion::Tense_Min7b5] = {
             "Tense (Min7♭5)",
             Tonality::Minor,
@@ -453,17 +460,10 @@ private:
             "Dark and brooding"
         };
         
-        emotionProfiles[Emotion::Tense_Min7sharp11] = {
-            "Tense (Min7#11)",
+        emotionProfiles[Emotion::Tense_Min7b9b13] = {
+            "Tense (Min7♭9♭13)",
             Tonality::Minor,
-            {0, 3, 7, 10, 18},  // R, m3, 5, b7, #11
-            "Mysterious tension"
-        };
-        
-        emotionProfiles[Emotion::Tense_Dim7] = {
-            "Tense (Dim7)",
-            Tonality::Minor,
-            {0, 3, 6, 9},  // R, m3, b5, bb7 (dim7)
+            {0, 3, 7, 10, 13, 20},  // R, m3, 5, b7, b9, b13
             "Ominous and unstable"
         };
         
@@ -504,30 +504,30 @@ private:
             "Gentle stillness"
         };
         
-        emotionProfiles[Emotion::Calm_Min69no5] = {
-            "Calm (Min6/9(no5))",
+        emotionProfiles[Emotion::Calm_MinAdd2no3] = {
+            "Calm (Min(add2 no3))",
             Tonality::Minor,
-            {0, 3, 9, 14},  // R, m3, 6, 9
+            {0, 2, 7},  // R, 2, 5
             "Delicate calm"
         };
         
-        emotionProfiles[Emotion::Calm_Min11no7] = {
-            "Calm (Min11(no7))",
+        emotionProfiles[Emotion::Calm_Min7no5] = {
+            "Calm (Min7(no5))",
             Tonality::Minor,
-            {0, 3, 7, 17},  // R, m3, 5, 11
+            {0, 3, 10},  // R, m3, b7
             "Suspended peace"
         };
         
-        emotionProfiles[Emotion::Calm_Spread5ths9ths] = {
-            "Calm (Spread 5ths/9ths)",
+        emotionProfiles[Emotion::Calm_MinQuartal] = {
+            "Calm (Quartal)",
             Tonality::Minor,
-            {0, 7, 14, 21},  // R, 5, 9, 13
+            {0, 5, 10},  // R, 4, b7
             "Expansive tranquility"
         };
         
         // Dark/Major chord emotions
-        emotionProfiles[Emotion::Dark_Maj7sharp11] = {
-            "Dark (Maj7♯11)",
+        emotionProfiles[Emotion::Dark_MajorMinMaj7] = {
+            "Dark (mMaj7)",
             Tonality::Major,
             {0, 4, 7, 11, 18},  // R, M3, 5, M7, #11
             "Mysterious beauty"
@@ -555,31 +555,31 @@ private:
         };
         
         // Dark/Minor chord emotions
-        emotionProfiles[Emotion::Dark_Min7] = {
-            "Dark (Min7)",
+        emotionProfiles[Emotion::Dark_MinorMaj7] = {
+            "Dark (Min(maj7))",
             Tonality::Minor,
-            {0, 3, 7, 10},  // R, m3, 5, b7
+            {0, 3, 7, 11},  // R, m3, 5, M7
             "Somber and brooding"
         };
         
-        emotionProfiles[Emotion::Dark_Min6] = {
-            "Dark (Min6)",
+        emotionProfiles[Emotion::Dark_MinorMaj7Add9] = {
+            "Dark (Min(maj7)(add9))",
             Tonality::Minor,
-            {0, 3, 7, 9},  // R, m3, 5, 6
+            {0, 3, 7, 11, 14},  // R, m3, 5, M7, 9
             "Noir atmosphere"
         };
         
-        emotionProfiles[Emotion::Dark_Min7b9] = {
-            "Dark (Min7♭9)",
+        emotionProfiles[Emotion::Dark_Min7b13] = {
+            "Dark (Min7♭13)",
             Tonality::Minor,
-            {0, 3, 7, 10, 13},  // R, m3, 5, b7, b9
+            {0, 3, 7, 10, 20},  // R, m3, 5, b7, b13
             "Foreboding tension"
         };
         
-        emotionProfiles[Emotion::Dark_MinMaj7b6] = {
-            "Dark (Min(maj7♭6))",
+        emotionProfiles[Emotion::Dark_Min7b9b13] = {
+            "Dark (Min7♭9♭13))",
             Tonality::Minor,
-            {0, 3, 7, 11, 8},  // R, m3, 5, M7, b6
+            {0, 3, 7, 10, 13, 20},  // R, m3, 5, b7, b9, b13
             "Eerie and unsettling"
         };
     }
