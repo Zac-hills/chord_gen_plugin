@@ -13,6 +13,12 @@ public:
         C = 0, C_Sharp, D, D_Sharp, E, F, F_Sharp, G, G_Sharp, A, A_Sharp, B
     };
     
+    enum class Tonality
+    {
+        Major,
+        Minor
+    };
+    
     enum class ChordType
     {
         Major,
@@ -53,9 +59,11 @@ public:
     ~KeyManager() = default;
     
     // Key management
-    void setCurrentKey(Key key);
+    void setCurrentKey(Key key, Tonality tonality = Tonality::Major);
     Key getCurrentKey() const;
+    Tonality getCurrentTonality() const;
     std::string getKeyName(Key key) const;
+    std::string getKeyName(Key key, Tonality tonality) const;
     
     // Scale and note functions
     std::vector<int> getScaleNotes() const;
@@ -95,8 +103,10 @@ public:
 
 private:
     Key currentKey;
+    Tonality currentTonality;
     std::vector<std::string> noteNames;
     std::vector<int> majorScalePattern;
+    std::vector<int> minorScalePattern;
     std::map<std::string, std::vector<ScaleDegree>> commonProgressions;
     
     void initializeProgressions();

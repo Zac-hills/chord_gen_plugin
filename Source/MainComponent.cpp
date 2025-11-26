@@ -3,6 +3,7 @@
 //==============================================================================
 MainComponent::MainComponent() : keyboard(keyboardState, juce::MidiKeyboardComponent::horizontalKeyboard)
 {
+    // Major keys
     keyComboBox.addItem("C", 1);
     keyComboBox.addItem("C#", 2);
     keyComboBox.addItem("D", 3);
@@ -15,6 +16,20 @@ MainComponent::MainComponent() : keyboard(keyboardState, juce::MidiKeyboardCompo
     keyComboBox.addItem("A", 10);
     keyComboBox.addItem("A#", 11);
     keyComboBox.addItem("B", 12);
+    
+    // Minor keys
+    keyComboBox.addItem("Cm", 13);
+    keyComboBox.addItem("C#m", 14);
+    keyComboBox.addItem("Dm", 15);
+    keyComboBox.addItem("D#m", 16);
+    keyComboBox.addItem("Em", 17);
+    keyComboBox.addItem("Fm", 18);
+    keyComboBox.addItem("F#m", 19);
+    keyComboBox.addItem("Gm", 20);
+    keyComboBox.addItem("G#m", 21);
+    keyComboBox.addItem("Am", 22);
+    keyComboBox.addItem("A#m", 23);
+    keyComboBox.addItem("Bm", 24);
     
     keyComboBox.setSelectedId(1);
     keyComboBox.onChange = [this] { keySelectionChanged(); };
@@ -616,8 +631,22 @@ void MainComponent::resized()
 
 void MainComponent::keySelectionChanged()
 {
-    int selectedKey = keyComboBox.getSelectedId() - 1;
-    keyManager.setCurrentKey(static_cast<KeyManager::Key>(selectedKey));
+    int selectedId = keyComboBox.getSelectedId();
+    
+    // IDs 1-12 are major keys, IDs 13-24 are minor keys
+    if (selectedId <= 12)
+    {
+        // Major key
+        int keyIndex = selectedId - 1;
+        keyManager.setCurrentKey(static_cast<KeyManager::Key>(keyIndex), KeyManager::Tonality::Major);
+    }
+    else
+    {
+        // Minor key
+        int keyIndex = (selectedId - 13); // Map 13-24 to 0-11
+        keyManager.setCurrentKey(static_cast<KeyManager::Key>(keyIndex), KeyManager::Tonality::Minor);
+    }
+    
     updateDisplay();
     updateChordButtonLabels();  // Update button labels when key changes
     
@@ -1208,19 +1237,23 @@ void MainComponent::updateCustomProgressionDisplay()
                 // Show and update button
                 std::string chordName;
                 
+                // Get the base chord name from scale degree
+                int degree = customProgressionDegrees[i];
+                auto scaleDegree = static_cast<KeyManager::ScaleDegree>(degree);
+                auto chordType = useSevenths ? keyManager.analyzeSeventh(scaleDegree) : keyManager.analyzeTriad(scaleDegree);
+                std::string baseChordName = keyManager.getChordName(scaleDegree, chordType);
+                
                 // Check if this chord has an applied emotion
                 if (i < hasEmotionApplied.size() && hasEmotionApplied[i] && i < customProgressionEmotions.size())
                 {
-                    // Use the emotion chord name
-                    chordName = EmotionWheel::getEmotionName(customProgressionEmotions[i]);
+                    // Combine both: chord name + emotion name
+                    std::string emotionName = EmotionWheel::getEmotionName(customProgressionEmotions[i]);
+                    chordName = baseChordName + "\n" + emotionName;
                 }
                 else
                 {
-                    // Use the default chord name from scale degree
-                    int degree = customProgressionDegrees[i];
-                    auto scaleDegree = static_cast<KeyManager::ScaleDegree>(degree);
-                    auto chordType = useSevenths ? keyManager.analyzeSeventh(scaleDegree) : keyManager.analyzeTriad(scaleDegree);
-                    chordName = keyManager.getChordName(scaleDegree, chordType);
+                    // Use just the chord name
+                    chordName = baseChordName;
                 }
                 
                 chordButtonsWithBadges[i]->mainButton.setButtonText(juce::String(chordName));

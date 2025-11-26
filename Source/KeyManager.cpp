@@ -3,16 +3,18 @@
 //==============================================================================
 // KeyManager Implementation
 
-KeyManager::KeyManager() : currentKey(Key::C)
+KeyManager::KeyManager() : currentKey(Key::C), currentTonality(Tonality::Major)
 {
     noteNames = {"C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"};
     majorScalePattern = {0, 2, 4, 5, 7, 9, 11}; // W-W-H-W-W-W-H pattern
+    minorScalePattern = {0, 2, 3, 5, 7, 8, 10}; // W-H-W-W-H-W-W pattern (natural minor)
     initializeProgressions();
 }
 
-void KeyManager::setCurrentKey(Key key)
+void KeyManager::setCurrentKey(Key key, Tonality tonality)
 {
     currentKey = key;
+    currentTonality = tonality;
 }
 
 KeyManager::Key KeyManager::getCurrentKey() const
@@ -20,17 +22,31 @@ KeyManager::Key KeyManager::getCurrentKey() const
     return currentKey;
 }
 
+KeyManager::Tonality KeyManager::getCurrentTonality() const
+{
+    return currentTonality;
+}
+
 std::string KeyManager::getKeyName(Key key) const
 {
     return noteNames[static_cast<int>(key)];
+}
+
+std::string KeyManager::getKeyName(Key key, Tonality tonality) const
+{
+    std::string name = noteNames[static_cast<int>(key)];
+    if (tonality == Tonality::Minor)
+        name += "m";
+    return name;
 }
 
 std::vector<int> KeyManager::getScaleNotes() const
 {
     std::vector<int> scaleNotes;
     int rootNote = static_cast<int>(currentKey);
+    const auto& scalePattern = (currentTonality == Tonality::Major) ? majorScalePattern : minorScalePattern;
     
-    for (int interval : majorScalePattern)
+    for (int interval : scalePattern)
     {
         scaleNotes.push_back((rootNote + interval) % 12);
     }
@@ -289,42 +305,87 @@ std::vector<int> KeyManager::applyVoicing(const std::vector<int>& chord, Voicing
 
 KeyManager::ChordType KeyManager::analyzeTriad(ScaleDegree degree) const
 {
-    // In major key: I, IV, V are major; ii, iii, vi are minor; vii° is diminished
-    switch (degree)
+    if (currentTonality == Tonality::Major)
     {
-        case ScaleDegree::I:
-        case ScaleDegree::IV:
-        case ScaleDegree::V:
-            return ChordType::Major;
-        case ScaleDegree::II:
-        case ScaleDegree::III:
-        case ScaleDegree::VI:
-            return ChordType::Minor;
-        case ScaleDegree::VII:
-            return ChordType::Diminished;
-        default:
-            return ChordType::Major;
+        // In major key: I, IV, V are major; ii, iii, vi are minor; vii° is diminished
+        switch (degree)
+        {
+            case ScaleDegree::I:
+            case ScaleDegree::IV:
+            case ScaleDegree::V:
+                return ChordType::Major;
+            case ScaleDegree::II:
+            case ScaleDegree::III:
+            case ScaleDegree::VI:
+                return ChordType::Minor;
+            case ScaleDegree::VII:
+                return ChordType::Diminished;
+            default:
+                return ChordType::Major;
+        }
+    }
+    else // Minor key
+    {
+        // In natural minor: i, iv, v are minor; III, VI, VII are major; ii° is diminished
+        switch (degree)
+        {
+            case ScaleDegree::I:
+            case ScaleDegree::IV:
+            case ScaleDegree::V:
+                return ChordType::Minor;
+            case ScaleDegree::III:
+            case ScaleDegree::VI:
+            case ScaleDegree::VII:
+                return ChordType::Major;
+            case ScaleDegree::II:
+                return ChordType::Diminished;
+            default:
+                return ChordType::Minor;
+        }
     }
 }
 
 KeyManager::ChordType KeyManager::analyzeSeventh(ScaleDegree degree) const
 {
-    // In major key seventh chord qualities
-    switch (degree)
+    if (currentTonality == Tonality::Major)
     {
-        case ScaleDegree::I:
-        case ScaleDegree::IV:
-            return ChordType::Major7;
-        case ScaleDegree::II:
-        case ScaleDegree::III:
-        case ScaleDegree::VI:
-            return ChordType::Minor7;
-        case ScaleDegree::V:
-            return ChordType::Dominant7;
-        case ScaleDegree::VII:
-            return ChordType::HalfDiminished7;
-        default:
-            return ChordType::Major7;
+        // In major key seventh chord qualities
+        switch (degree)
+        {
+            case ScaleDegree::I:
+            case ScaleDegree::IV:
+                return ChordType::Major7;
+            case ScaleDegree::II:
+            case ScaleDegree::III:
+            case ScaleDegree::VI:
+                return ChordType::Minor7;
+            case ScaleDegree::V:
+                return ChordType::Dominant7;
+            case ScaleDegree::VII:
+                return ChordType::HalfDiminished7;
+            default:
+                return ChordType::Major7;
+        }
+    }
+    else // Minor key
+    {
+        // In natural minor key seventh chord qualities
+        switch (degree)
+        {
+            case ScaleDegree::I:
+            case ScaleDegree::IV:
+            case ScaleDegree::V:
+                return ChordType::Minor7;
+            case ScaleDegree::III:
+            case ScaleDegree::VI:
+                return ChordType::Major7;
+            case ScaleDegree::VII:
+                return ChordType::Dominant7;
+            case ScaleDegree::II:
+                return ChordType::HalfDiminished7;
+            default:
+                return ChordType::Minor7;
+        }
     }
 }
 
