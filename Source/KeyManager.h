@@ -68,6 +68,7 @@ public:
     // Scale and note functions
     std::vector<int> getScaleNotes() const;
     std::vector<std::string> getScaleNoteNames() const;
+    std::vector<std::string> getScaleNoteNamesWithProperSpelling() const;
     std::vector<int> getChromaticNotes() const;
     std::vector<std::string> getChromaticNoteNames() const;
     bool isNoteInKey(int note) const;

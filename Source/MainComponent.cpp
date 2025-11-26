@@ -4,32 +4,32 @@
 MainComponent::MainComponent() : keyboard(keyboardState, juce::MidiKeyboardComponent::horizontalKeyboard)
 {
     // Major keys
-    keyComboBox.addItem("C", 1);
-    keyComboBox.addItem("C#", 2);
-    keyComboBox.addItem("D", 3);
-    keyComboBox.addItem("D#", 4);
-    keyComboBox.addItem("E", 5);
-    keyComboBox.addItem("F", 6);
-    keyComboBox.addItem("F#", 7);
-    keyComboBox.addItem("G", 8);
-    keyComboBox.addItem("G#", 9);
-    keyComboBox.addItem("A", 10);
-    keyComboBox.addItem("A#", 11);
-    keyComboBox.addItem("B", 12);
+    keyComboBox.addItem(juce::String::fromUTF8("C Major"), 1);
+    keyComboBox.addItem(juce::String::fromUTF8("C♯ Major"), 2);
+    keyComboBox.addItem(juce::String::fromUTF8("D Major"), 3);
+    keyComboBox.addItem(juce::String::fromUTF8("E♭ Major"), 4);
+    keyComboBox.addItem(juce::String::fromUTF8("E Major"), 5);
+    keyComboBox.addItem(juce::String::fromUTF8("F Major"), 6);
+    keyComboBox.addItem(juce::String::fromUTF8("F♯ Major"), 7);
+    keyComboBox.addItem(juce::String::fromUTF8("G Major"), 8);
+    keyComboBox.addItem(juce::String::fromUTF8("A♭ Major"), 9);
+    keyComboBox.addItem(juce::String::fromUTF8("A Major"), 10);
+    keyComboBox.addItem(juce::String::fromUTF8("B♭ Major"), 11);
+    keyComboBox.addItem(juce::String::fromUTF8("B Major"), 12);
     
     // Minor keys
-    keyComboBox.addItem("Cm", 13);
-    keyComboBox.addItem("C#m", 14);
-    keyComboBox.addItem("Dm", 15);
-    keyComboBox.addItem("D#m", 16);
-    keyComboBox.addItem("Em", 17);
-    keyComboBox.addItem("Fm", 18);
-    keyComboBox.addItem("F#m", 19);
-    keyComboBox.addItem("Gm", 20);
-    keyComboBox.addItem("G#m", 21);
-    keyComboBox.addItem("Am", 22);
-    keyComboBox.addItem("A#m", 23);
-    keyComboBox.addItem("Bm", 24);
+    keyComboBox.addItem(juce::String::fromUTF8("A Minor"), 13);
+    keyComboBox.addItem(juce::String::fromUTF8("A♯ Minor"), 14);
+    keyComboBox.addItem(juce::String::fromUTF8("B Minor"), 15);
+    keyComboBox.addItem(juce::String::fromUTF8("C Minor"), 16);
+    keyComboBox.addItem(juce::String::fromUTF8("C♯ Minor"), 17);
+    keyComboBox.addItem(juce::String::fromUTF8("D Minor"), 18);
+    keyComboBox.addItem(juce::String::fromUTF8("D♯ Minor"), 19);
+    keyComboBox.addItem(juce::String::fromUTF8("E Minor"), 20);
+    keyComboBox.addItem(juce::String::fromUTF8("F Minor"), 21);
+    keyComboBox.addItem(juce::String::fromUTF8("F♯ Minor"), 22);
+    keyComboBox.addItem(juce::String::fromUTF8("G Minor"), 23);
+    keyComboBox.addItem(juce::String::fromUTF8("G♯ Minor"), 24);
     
     keyComboBox.setSelectedId(1);
     keyComboBox.onChange = [this] { keySelectionChanged(); };
@@ -633,19 +633,35 @@ void MainComponent::keySelectionChanged()
 {
     int selectedId = keyComboBox.getSelectedId();
     
-    // IDs 1-12 are major keys, IDs 13-24 are minor keys
+    // Major keys mapping: ID -> Key index
+    // 1:C, 2:C♯, 3:D, 4:E♭(D♯), 5:E, 6:F, 7:F♯, 8:G, 9:A♭(G♯), 10:A, 11:B♭(A♯), 12:B
+    const int majorKeyMap[12] = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11}; // C, C♯, D, D♯, E, F, F♯, G, G♯, A, A♯, B
+    
+    // Minor keys mapping: ID -> Key index  
+    // 13:Am, 14:A♯m, 15:Bm, 16:Cm, 17:C♯m, 18:Dm, 19:D♯m, 20:Em, 21:Fm, 22:F♯m, 23:Gm, 24:G♯m
+    const int minorKeyMap[12] = {9, 10, 11, 0, 1, 2, 3, 4, 5, 6, 7, 8}; // A, A♯, B, C, C♯, D, D♯, E, F, F♯, G, G♯
+    
     if (selectedId <= 12)
     {
         // Major key
-        int keyIndex = selectedId - 1;
+        int keyIndex = majorKeyMap[selectedId - 1];
         keyManager.setCurrentKey(static_cast<KeyManager::Key>(keyIndex), KeyManager::Tonality::Major);
     }
     else
     {
         // Minor key
-        int keyIndex = (selectedId - 13); // Map 13-24 to 0-11
+        int keyIndex = minorKeyMap[selectedId - 13];
         keyManager.setCurrentKey(static_cast<KeyManager::Key>(keyIndex), KeyManager::Tonality::Minor);
     }
+    
+    // Deselect any selected chord for emotion wheel
+    selectedChordIndexForEmotion = -1;
+    
+    // Clear all applied emotions
+    hasEmotionApplied.clear();
+    hasEmotionApplied.resize(customProgressionDegrees.size(), false);
+    customProgressionEmotions.clear();
+    customProgressionEmotions.resize(customProgressionDegrees.size(), EmotionWheel::Emotion::Happy_Maj6);
     
     updateDisplay();
     updateChordButtonLabels();  // Update button labels when key changes
@@ -1020,7 +1036,7 @@ void MainComponent::mouseDrag(const juce::MouseEvent& event)
             }
             
             // Apply emotion if one exists for this chord
-            if (i < customProgressionEmotions.size())
+            if (i < hasEmotionApplied.size() && hasEmotionApplied[i] && i < customProgressionEmotions.size())
             {
                 auto emotion = customProgressionEmotions[i];
                 int rootNote = chord[0];
@@ -1287,7 +1303,7 @@ void MainComponent::updateChordButtonLabels()
 {
     const juce::StringArray romanNumerals = { "I", "II", "III", "IV", "V", "VI", "VII" };
     const juce::StringArray romanNumeralsMinor = { "i", "ii", "iii", "iv", "v", "vi", "vii" };
-    auto scaleNotes = keyManager.getScaleNoteNames();
+    auto scaleNotes = keyManager.getScaleNoteNamesWithProperSpelling();
     bool useSevenths = chordTypeComboBox.getSelectedId() == 2;
     
     for (int i = 0; i < 7; ++i)

@@ -67,6 +67,45 @@ std::vector<std::string> KeyManager::getScaleNoteNames() const
     return names;
 }
 
+std::vector<std::string> KeyManager::getScaleNoteNamesWithProperSpelling() const
+{
+    // Define proper note spellings for each key signature
+    // Major keys with flats: F, Bb, Eb, Ab, Db, Gb, Cb
+    // Major keys with sharps: G, D, A, E, B, F#, C#
+    
+    std::vector<std::string> properNames;
+    int rootNote = static_cast<int>(currentKey);
+    const auto& scalePattern = (currentTonality == Tonality::Major) ? majorScalePattern : minorScalePattern;
+    
+    // Determine if this key uses flats or sharps
+    bool useFlats = false;
+    
+    if (currentTonality == Tonality::Major)
+    {
+        // Major keys: F(5), Bb(10), Eb(3), Ab(8), Db(1), Gb(6), Cb(11) use flats
+        useFlats = (rootNote == 5 || rootNote == 10 || rootNote == 3 || rootNote == 8 || rootNote == 1 || rootNote == 6 || rootNote == 11);
+    }
+    else // Minor
+    {
+        // Minor keys: Dm(2), Gm(7), Cm(0), Fm(5), Bbm(10), Ebm(3), Abm(8) use flats
+        useFlats = (rootNote == 2 || rootNote == 7 || rootNote == 0 || rootNote == 5 || rootNote == 10 || rootNote == 3 || rootNote == 8);
+    }
+    
+    // Note names for flat keys and sharp keys
+    const std::vector<std::string> flatNames = {"C", "D♭", "D", "E♭", "E", "F", "G♭", "G", "A♭", "A", "B♭", "B"};
+    const std::vector<std::string> sharpNames = {"C", "C♯", "D", "D♯", "E", "F", "F♯", "G", "G♯", "A", "A♯", "B"};
+    
+    const auto& namesToUse = useFlats ? flatNames : sharpNames;
+    
+    for (int interval : scalePattern)
+    {
+        int noteIndex = (rootNote + interval) % 12;
+        properNames.push_back(namesToUse[noteIndex]);
+    }
+    
+    return properNames;
+}
+
 std::vector<int> KeyManager::getChromaticNotes() const
 {
     std::vector<int> chromaticNotes;
@@ -391,7 +430,19 @@ KeyManager::ChordType KeyManager::analyzeSeventh(ScaleDegree degree) const
 
 std::string KeyManager::getChordName(ScaleDegree degree, ChordType type) const
 {
-    std::string rootName = noteNames[getNoteFromDegree(degree)];
+    // Get the properly spelled note name based on the key signature
+    auto properNoteNames = getScaleNoteNamesWithProperSpelling();
+    int degreeIndex = static_cast<int>(degree) - 1;
+    
+    std::string rootName;
+    if (degreeIndex >= 0 && degreeIndex < properNoteNames.size())
+    {
+        rootName = properNoteNames[degreeIndex];
+    }
+    else
+    {
+        rootName = noteNames[getNoteFromDegree(degree)]; // Fallback to sharps
+    }
     
     switch (type)
     {
