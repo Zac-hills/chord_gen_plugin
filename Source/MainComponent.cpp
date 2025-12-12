@@ -44,17 +44,50 @@ MainComponent::MainComponent() : keyboard(keyboardState, juce::MidiKeyboardCompo
     const juce::StringArray romanNumerals = { "I", "II", "III", "IV", "V", "VI", "VII" };
     for (int i = 0; i < 7; ++i)
     {
-        chordButtons[i].setButtonText(romanNumerals[i]);
-        chordButtons[i].onClick = [this, i] { addChordToProgression(i + 1); };
+        chordButtons[i].mainButton.setButtonText(romanNumerals[i]);
+        chordButtons[i].mainButton.onClick = [this, i] { addChordToProgression(i + 1); };
         
-        // Add mouse enter listener to play chord on hover
-        chordButtons[i].addMouseListener(this, false);
+        // Add play button click handler
+        chordButtons[i].playButton.onClick = [this, i] {
+            // Stop any previous preview
+            if (isPreviewPlaying)
+            {
+                stopCurrentChord();
+                currentChordNotes.clear();
+                stopTimer();
+            }
+            
+            // Generate and play the chord for this scale degree
+            auto scaleDegree = static_cast<KeyManager::ScaleDegree>(i + 1);
+            bool useSevenths = chordTypeComboBox.getSelectedId() == 2;
+            
+            std::vector<int> chord;
+            if (useSevenths)
+            {
+                chord = keyManager.generateSeventh(scaleDegree);
+            }
+            else
+            {
+                chord = keyManager.generateTriad(scaleDegree);
+            }
+            
+            playChord(chord);
+            isPreviewPlaying = true;
+            
+            // Calculate quarter note duration in milliseconds
+            int tempo = tempoEditor.getText().getIntValue();
+            if (tempo < 60 || tempo > 200) tempo = 120;
+            int quarterNoteDuration = (60000 / tempo);  // milliseconds per quarter note
+            
+            // Start timer to stop chord after quarter note
+            startTimer(quarterNoteDuration);
+        };
         
         addAndMakeVisible(chordButtons[i]);
     }
     
-    // Apply circular LookAndFeel to the root button (I)
-    chordButtons[0].setLookAndFeel(&circularButtonLookAndFeel);
+    // Apply circular LookAndFeel to the root button (I) main button
+    chordButtons[0].mainButton.setLookAndFeel(&circularButtonLookAndFeel);
     
     
     
@@ -126,14 +159,85 @@ MainComponent::MainComponent() : keyboard(keyboardState, juce::MidiKeyboardCompo
     // Setup emotion buttons
     for (int i = 0; i < 24; ++i)
     {
-        emotionButtons[i].onClick = [this, i]() {
+        emotionButtons[i].mainButton.onClick = [this, i]() {
             selectedEmotionIndex = i;
             updateEmotionDescription();
             applyEmotionToChord();
         };
         
-        // Add mouse listener to play emotion chord on hover
-        emotionButtons[i].addMouseListener(this, false);
+        // Add play button click handler for emotion buttons
+        emotionButtons[i].playButton.onClick = [this, i]() {
+            // Only play if a chord is selected and the button is enabled
+            if (selectedChordIndexForEmotion >= 0 && 
+                selectedChordIndexForEmotion < customProgressionDegrees.size() &&
+                emotionButtons[i].mainButton.isEnabled())
+            {
+                // Stop any previous preview
+                if (isPreviewPlaying)
+                {
+                    stopCurrentChord();
+                    currentChordNotes.clear();
+                    stopTimer();
+                }
+                
+                // Get the base chord
+                int degree = customProgressionDegrees[selectedChordIndexForEmotion];
+                auto scaleDegree = static_cast<KeyManager::ScaleDegree>(degree);
+                bool useSevenths = chordTypeComboBox.getSelectedId() == 2;
+                
+                std::vector<int> baseChord;
+                if (useSevenths)
+                {
+                    baseChord = keyManager.generateSeventh(scaleDegree);
+                }
+                else
+                {
+                    baseChord = keyManager.generateTriad(scaleDegree);
+                }
+                
+                // Get the tonality to find the right emotion
+                auto chordType = useSevenths ? keyManager.analyzeSeventh(scaleDegree) : keyManager.analyzeTriad(scaleDegree);
+                EmotionWheel::Tonality tonality = EmotionWheel::Tonality::Major;
+                
+                if (useSevenths)
+                {
+                    if (chordType == KeyManager::ChordType::Minor7 ||
+                        chordType == KeyManager::ChordType::Minor9 ||
+                        chordType == KeyManager::ChordType::HalfDiminished7 ||
+                        chordType == KeyManager::ChordType::Diminished7)
+                    {
+                        tonality = EmotionWheel::Tonality::Minor;
+                    }
+                }
+                else
+                {
+                    if (chordType == KeyManager::ChordType::Minor ||
+                        chordType == KeyManager::ChordType::Diminished)
+                    {
+                        tonality = EmotionWheel::Tonality::Minor;
+                    }
+                }
+                
+                // Get the emotion and apply it
+                auto emotions = emotionWheel.getEmotionsByTonality(tonality);
+                if (i < emotions.size())
+                {
+                    auto emotion = emotions[i];
+                    int rootNote = baseChord[0];
+                    std::vector<int> emotionChord = emotionWheel.applyEmotion(rootNote, emotion);
+                    playChord(emotionChord);
+                    isPreviewPlaying = true;
+                    
+                    // Calculate quarter note duration in milliseconds
+                    int tempo = tempoEditor.getText().getIntValue();
+                    if (tempo < 60 || tempo > 200) tempo = 120;
+                    int quarterNoteDuration = (60000 / tempo);  // milliseconds per quarter note
+                    
+                    // Start timer to stop chord after quarter note
+                    startTimer(quarterNoteDuration);
+                }
+            }
+        };
         
         addAndMakeVisible(emotionButtons[i]);
     }
@@ -270,7 +374,7 @@ MainComponent::MainComponent() : keyboard(keyboardState, juce::MidiKeyboardCompo
 MainComponent::~MainComponent()
 {
     // Reset LookAndFeel to avoid dangling pointer
-    chordButtons[0].setLookAndFeel(nullptr);
+    chordButtons[0].mainButton.setLookAndFeel(nullptr);
     shutdownAudio();
 }
 
@@ -645,13 +749,23 @@ void MainComponent::keySelectionChanged()
     {
         // Major key
         int keyIndex = majorKeyMap[selectedId - 1];
-        keyManager.setCurrentKey(static_cast<KeyManager::Key>(keyIndex), KeyManager::Tonality::Major);
+        // Determine if this is a sharp key based on the dropdown selection
+        // Sharp major keys: C♯(2), D(3), E(5), F♯(7), G(8), A(10), B(12)
+        // Flat major keys: E♭(4), F(6), A♭(9), B♭(11)
+        bool isSharpKey = (selectedId == 2 || selectedId == 3 || selectedId == 5 || 
+                          selectedId == 7 || selectedId == 8 || selectedId == 10 || selectedId == 12);
+        keyManager.setCurrentKey(static_cast<KeyManager::Key>(keyIndex), KeyManager::Tonality::Major, isSharpKey);
     }
     else
     {
         // Minor key
         int keyIndex = minorKeyMap[selectedId - 13];
-        keyManager.setCurrentKey(static_cast<KeyManager::Key>(keyIndex), KeyManager::Tonality::Minor);
+        // Determine if this is a sharp minor key based on the dropdown selection
+        // Sharp minor keys: A♯(14), B(15), C♯(17), D♯(19), E(20), F♯(22), G♯(24)
+        // Flat minor keys: C(16), D(18), F(21), G(23)
+        bool isSharpKey = (selectedId == 14 || selectedId == 15 || selectedId == 17 || 
+                          selectedId == 19 || selectedId == 20 || selectedId == 22 || selectedId == 24);
+        keyManager.setCurrentKey(static_cast<KeyManager::Key>(keyIndex), KeyManager::Tonality::Minor, isSharpKey);
     }
     
     // Deselect any selected chord for emotion wheel
@@ -865,125 +979,15 @@ void MainComponent::stopCurrentChord()
     }
 }
 
-void MainComponent::mouseEnter(const juce::MouseEvent& event)
+void MainComponent::timerCallback()
 {
-    // Disable hover sounds when progression is playing
-    if (isPlaying)
-        return;
-    
-    // Check if the mouse is over one of the chord buttons
-    for (int i = 0; i < 7; ++i)
+    // Stop the preview chord after timer expires
+    if (isPreviewPlaying)
     {
-        if (event.eventComponent == &chordButtons[i])
-        {
-            // Generate and play the chord for this scale degree
-            auto scaleDegree = static_cast<KeyManager::ScaleDegree>(i + 1);
-            bool useSevenths = chordTypeComboBox.getSelectedId() == 2;
-            
-            std::vector<int> chord;
-            if (useSevenths)
-            {
-                chord = keyManager.generateSeventh(scaleDegree);
-            }
-            else
-            {
-                chord = keyManager.generateTriad(scaleDegree);
-            }
-            
-            playChord(chord);
-            return;
-        }
-    }
-    
-    // Check if the mouse is over one of the emotion buttons
-    for (int i = 0; i < 24; ++i)
-    {
-        if (event.eventComponent == &emotionButtons[i])
-        {
-            // Only play if a chord is selected and the button is enabled
-            if (selectedChordIndexForEmotion >= 0 && 
-                selectedChordIndexForEmotion < customProgressionDegrees.size() &&
-                emotionButtons[i].isEnabled())
-            {
-                // Get the base chord
-                int degree = customProgressionDegrees[selectedChordIndexForEmotion];
-                auto scaleDegree = static_cast<KeyManager::ScaleDegree>(degree);
-                bool useSevenths = chordTypeComboBox.getSelectedId() == 2;
-                
-                std::vector<int> baseChord;
-                if (useSevenths)
-                {
-                    baseChord = keyManager.generateSeventh(scaleDegree);
-                }
-                else
-                {
-                    baseChord = keyManager.generateTriad(scaleDegree);
-                }
-                
-                // Get the tonality to find the right emotion
-                auto chordType = useSevenths ? keyManager.analyzeSeventh(scaleDegree) : keyManager.analyzeTriad(scaleDegree);
-                EmotionWheel::Tonality tonality = EmotionWheel::Tonality::Major;
-                
-                if (useSevenths)
-                {
-                    if (chordType == KeyManager::ChordType::Minor7 ||
-                        chordType == KeyManager::ChordType::Minor9 ||
-                        chordType == KeyManager::ChordType::HalfDiminished7 ||
-                        chordType == KeyManager::ChordType::Diminished7)
-                    {
-                        tonality = EmotionWheel::Tonality::Minor;
-                    }
-                }
-                else
-                {
-                    if (chordType == KeyManager::ChordType::Minor ||
-                        chordType == KeyManager::ChordType::Diminished)
-                    {
-                        tonality = EmotionWheel::Tonality::Minor;
-                    }
-                }
-                
-                // Get the emotion and apply it
-                auto emotions = emotionWheel.getEmotionsByTonality(tonality);
-                if (i < emotions.size())
-                {
-                    auto emotion = emotions[i];
-                    int rootNote = baseChord[0];
-                    std::vector<int> emotionChord = emotionWheel.applyEmotion(rootNote, emotion);
-                    playChord(emotionChord);
-                }
-            }
-            return;
-        }
-    }
-}
-
-void MainComponent::mouseExit(const juce::MouseEvent& event)
-{
-    // Don't stop hover sounds when progression is playing
-    if (isPlaying)
-        return;
-    
-    // Check if the mouse is leaving one of the chord buttons
-    for (int i = 0; i < 7; ++i)
-    {
-        if (event.eventComponent == &chordButtons[i])
-        {
-            stopCurrentChord();
-            currentChordNotes.clear();
-            return;
-        }
-    }
-    
-    // Check if the mouse is leaving one of the emotion buttons
-    for (int i = 0; i < 24; ++i)
-    {
-        if (event.eventComponent == &emotionButtons[i])
-        {
-            stopCurrentChord();
-            currentChordNotes.clear();
-            return;
-        }
+        stopCurrentChord();
+        currentChordNotes.clear();
+        isPreviewPlaying = false;
+        stopTimer();
     }
 }
 
@@ -1057,10 +1061,14 @@ void MainComponent::mouseDrag(const juce::MouseEvent& event)
         }
         
         midiFile.addTrack(track);
+        // create UUID for the MIDI file
+        juce::Uuid midiFileUuid;
+        // initialize UUID
+        juce::String uuidString = midiFileUuid.toString();
         
         // Write MIDI file to temporary location
         auto tempFile = juce::File::getSpecialLocation(juce::File::tempDirectory)
-            .getChildFile("chord_progression.mid");
+            .getChildFile(uuidString + "chord_progression.mid");
         
         juce::FileOutputStream stream(tempFile);
         if (stream.openedOk())
@@ -1313,26 +1321,31 @@ void MainComponent::updateChordButtonLabels()
             auto scaleDegree = static_cast<KeyManager::ScaleDegree>(i + 1);
             auto chordType = useSevenths ? keyManager.analyzeSeventh(scaleDegree) : keyManager.analyzeTriad(scaleDegree);
             
-            // Determine if the chord is minor or diminished
-            bool isMinor = false;
+            // Build the chord name with proper quality indicator
+            juce::String noteName = juce::String(scaleNotes[i]);
+            
             if (useSevenths)
             {
-                isMinor = (chordType == KeyManager::ChordType::Minor7 ||
-                          chordType == KeyManager::ChordType::Minor9 ||
-                          chordType == KeyManager::ChordType::HalfDiminished7 ||
-                          chordType == KeyManager::ChordType::Diminished7);
+                if (chordType == KeyManager::ChordType::Minor7 || chordType == KeyManager::ChordType::Minor9)
+                    noteName += "m7";
+                else if (chordType == KeyManager::ChordType::HalfDiminished7)
+                    noteName += juce::String::fromUTF8("ø7");
+                else if (chordType == KeyManager::ChordType::Diminished7)
+                    noteName += juce::String::fromUTF8("°7");
+                else if (chordType == KeyManager::ChordType::Major7)
+                    noteName += "M7";
+                else if (chordType == KeyManager::ChordType::Dominant7)
+                    noteName += "7";
             }
             else
             {
-                isMinor = (chordType == KeyManager::ChordType::Minor ||
-                          chordType == KeyManager::ChordType::Diminished);
+                if (chordType == KeyManager::ChordType::Minor)
+                    noteName += "m";
+                else if (chordType == KeyManager::ChordType::Diminished)
+                    noteName += juce::String::fromUTF8("°");
             }
             
-            juce::String noteName = juce::String(scaleNotes[i]);
-            if (isMinor)
-                noteName += "m";
-            
-            chordButtons[i].setButtonText(noteName);
+            chordButtons[i].mainButton.setButtonText(noteName);
         }
     }
 }
@@ -1385,7 +1398,7 @@ void MainComponent::updateChordSelector()
     if (customProgressionDegrees.empty())
     {
         for (auto& btn : emotionButtons)
-            btn.setEnabled(false);
+            btn.mainButton.setEnabled(false);
         emotionDescriptionLabel.setText("Build a progression first", juce::dontSendNotification);
         return;
     }
@@ -1398,7 +1411,7 @@ void MainComponent::updateChordSelector()
     else
     {
         for (auto& btn : emotionButtons)
-            btn.setEnabled(false);
+            btn.mainButton.setEnabled(false);
         emotionDescriptionLabel.setText("Click a chord to select it", juce::dontSendNotification);
     }
 }
@@ -1410,7 +1423,7 @@ void MainComponent::updateEmotionComboBox()
     {
         // Disable all emotion buttons
         for (auto& btn : emotionButtons)
-            btn.setEnabled(false);
+            btn.mainButton.setEnabled(false);
         return;
     }
     
@@ -1451,13 +1464,13 @@ void MainComponent::updateEmotionComboBox()
         {
             auto emotion = emotions[i];
             juce::String emotionName = EmotionWheel::getEmotionName(emotion);
-            emotionButtons[i].setButtonText(emotionName);
-            emotionButtons[i].setEnabled(true);
+            emotionButtons[i].mainButton.setButtonText(emotionName);
+            emotionButtons[i].mainButton.setEnabled(true);
         }
         else
         {
-            emotionButtons[i].setButtonText("");
-            emotionButtons[i].setEnabled(false);
+            emotionButtons[i].mainButton.setButtonText("");
+            emotionButtons[i].mainButton.setEnabled(false);
         }
     }
     

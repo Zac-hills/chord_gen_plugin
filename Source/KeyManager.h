@@ -59,7 +59,7 @@ public:
     ~KeyManager() = default;
     
     // Key management
-    void setCurrentKey(Key key, Tonality tonality = Tonality::Major);
+    void setCurrentKey(Key key, Tonality tonality = Tonality::Major, bool preferSharps = true);
     Key getCurrentKey() const;
     Tonality getCurrentTonality() const;
     std::string getKeyName(Key key) const;
@@ -105,6 +105,7 @@ public:
 private:
     Key currentKey;
     Tonality currentTonality;
+    bool preferSharps;
     std::vector<std::string> noteNames;
     std::vector<int> majorScalePattern;
     std::vector<int> minorScalePattern;

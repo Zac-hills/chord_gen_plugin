@@ -3,7 +3,7 @@
 //==============================================================================
 // KeyManager Implementation
 
-KeyManager::KeyManager() : currentKey(Key::C), currentTonality(Tonality::Major)
+KeyManager::KeyManager() : currentKey(Key::C), currentTonality(Tonality::Major), preferSharps(true)
 {
     noteNames = {"C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"};
     majorScalePattern = {0, 2, 4, 5, 7, 9, 11}; // W-W-H-W-W-W-H pattern
@@ -11,10 +11,11 @@ KeyManager::KeyManager() : currentKey(Key::C), currentTonality(Tonality::Major)
     initializeProgressions();
 }
 
-void KeyManager::setCurrentKey(Key key, Tonality tonality)
+void KeyManager::setCurrentKey(Key key, Tonality tonality, bool preferSharps)
 {
     currentKey = key;
     currentTonality = tonality;
+    this->preferSharps = preferSharps;
 }
 
 KeyManager::Key KeyManager::getCurrentKey() const
@@ -69,38 +70,60 @@ std::vector<std::string> KeyManager::getScaleNoteNames() const
 
 std::vector<std::string> KeyManager::getScaleNoteNamesWithProperSpelling() const
 {
-    // Define proper note spellings for each key signature
-    // Major keys with flats: F, Bb, Eb, Ab, Db, Gb, Cb
-    // Major keys with sharps: G, D, A, E, B, F#, C#
-    
     std::vector<std::string> properNames;
     int rootNote = static_cast<int>(currentKey);
     const auto& scalePattern = (currentTonality == Tonality::Major) ? majorScalePattern : minorScalePattern;
     
-    // Determine if this key uses flats or sharps
-    bool useFlats = false;
+    // Letter names cycle through the musical alphabet
+    const std::vector<std::string> letterNames = {"C", "D", "E", "F", "G", "A", "B"};
     
-    if (currentTonality == Tonality::Major)
+    // Determine starting letter based on root note and sharp/flat preference
+    int startingLetter = 0;
+    switch (rootNote)
     {
-        // Major keys: F(5), Bb(10), Eb(3), Ab(8), Db(1), Gb(6), Cb(11) use flats
-        useFlats = (rootNote == 5 || rootNote == 10 || rootNote == 3 || rootNote == 8 || rootNote == 1 || rootNote == 6 || rootNote == 11);
+        case 0: startingLetter = 0; break; // C
+        case 1: startingLetter = preferSharps ? 0 : 1; break; // C# (starts on C) or Db (starts on D)
+        case 2: startingLetter = 1; break; // D
+        case 3: startingLetter = preferSharps ? 1 : 2; break; // D# (starts on D) or Eb (starts on E)
+        case 4: startingLetter = 2; break; // E
+        case 5: startingLetter = 3; break; // F
+        case 6: startingLetter = preferSharps ? 3 : 4; break; // F# (starts on F) or Gb (starts on G)
+        case 7: startingLetter = 4; break; // G
+        case 8: startingLetter = preferSharps ? 4 : 5; break; // G# (starts on G) or Ab (starts on A)
+        case 9: startingLetter = 5; break; // A
+        case 10: startingLetter = preferSharps ? 5 : 6; break; // A# (starts on A) or Bb (starts on B)
+        case 11: startingLetter = 6; break; // B
     }
-    else // Minor
+    
+    // Build scale with proper letter sequence
+    for (size_t i = 0; i < scalePattern.size(); ++i)
     {
-        // Minor keys: Dm(2), Gm(7), Cm(0), Fm(5), Bbm(10), Ebm(3), Abm(8) use flats
-        useFlats = (rootNote == 2 || rootNote == 7 || rootNote == 0 || rootNote == 5 || rootNote == 10 || rootNote == 3 || rootNote == 8);
-    }
-    
-    // Note names for flat keys and sharp keys
-    const std::vector<std::string> flatNames = {"C", "D♭", "D", "E♭", "E", "F", "G♭", "G", "A♭", "A", "B♭", "B"};
-    const std::vector<std::string> sharpNames = {"C", "C♯", "D", "D♯", "E", "F", "F♯", "G", "G♯", "A", "A♯", "B"};
-    
-    const auto& namesToUse = useFlats ? flatNames : sharpNames;
-    
-    for (int interval : scalePattern)
-    {
-        int noteIndex = (rootNote + interval) % 12;
-        properNames.push_back(namesToUse[noteIndex]);
+        int interval = scalePattern[i];
+        int actualPitch = (rootNote + interval) % 12;
+        int expectedLetter = (startingLetter + i) % 7;
+        
+        std::string noteName = letterNames[expectedLetter];
+        
+        // Calculate expected pitch for this letter
+        const std::vector<int> naturalPitches = {0, 2, 4, 5, 7, 9, 11}; // C D E F G A B
+        int naturalPitch = naturalPitches[expectedLetter];
+        int difference = actualPitch - naturalPitch;
+        
+        // Handle wraparound
+        if (difference < -6) difference += 12;
+        if (difference > 6) difference -= 12;
+        
+        // Add accidentals
+        if (difference == 1)
+            noteName += "♯";
+        else if (difference == 2)
+            noteName += "♯♯";
+        else if (difference == -1)
+            noteName += "♭";
+        else if (difference == -2)
+            noteName += "♭♭";
+        
+        properNames.push_back(noteName);
     }
     
     return properNames;

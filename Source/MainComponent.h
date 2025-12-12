@@ -94,6 +94,36 @@ private:
 };
 
 //==============================================================================
+// Split button component with main action and play button
+class SplitButton : public juce::Component
+{
+public:
+    SplitButton()
+    {
+        addAndMakeVisible(mainButton);
+        addAndMakeVisible(playButton);
+        
+        // Set play button text to simple ASCII character
+        playButton.setButtonText(">");
+    }
+    
+    void resized() override
+    {
+        auto bounds = getLocalBounds();
+        int playWidth = 20;  // Thin play button
+        
+        // Main button takes most of the space
+        mainButton.setBounds(bounds.removeFromLeft(bounds.getWidth() - playWidth));
+        
+        // Play button takes the remaining thin strip on the right
+        playButton.setBounds(bounds);
+    }
+    
+    juce::TextButton mainButton;
+    juce::TextButton playButton;
+};
+
+//==============================================================================
 // Forward declaration
 class SineWaveSound;
 
@@ -305,7 +335,8 @@ enum class ScaleType
     This component lives inside our window, and this is where you should put all
     your controls and content.
 */
-class MainComponent  : public juce::AudioAppComponent
+class MainComponent  : public juce::AudioAppComponent,
+                       private juce::Timer
 {
 public:
     //==============================================================================
@@ -322,8 +353,6 @@ public:
     void resized() override;
     
     //==============================================================================
-    void mouseEnter(const juce::MouseEvent& event) override;
-    void mouseExit(const juce::MouseEvent& event) override;
     void mouseDrag(const juce::MouseEvent& event) override;
 
     //==============================================================================
@@ -350,12 +379,12 @@ private:
     juce::TextButton midiDragButton;  // Button to drag MIDI progression to DAW
     
     // Emotion Wheel components
-    std::array<juce::TextButton, 24> emotionButtons;  // Grid of emotion buttons
+    std::array<SplitButton, 24> emotionButtons;  // Grid of emotion split buttons
     juce::Label emotionDescriptionLabel;
     int selectedEmotionIndex = -1;
     
     // Chord progression builder components
-    std::array<juce::TextButton, 7> chordButtons;  // Buttons for scale degrees I-VII
+    std::array<SplitButton, 7> chordButtons;  // Split buttons for scale degrees I-VII
     juce::Label progressionBuilderLabel;
     juce::Label customProgressionDisplayLabel;
     
@@ -397,6 +426,7 @@ private:
     std::vector<EmotionWheel::Emotion> customProgressionEmotions;  // Stores applied emotions (parallel to customProgressionDegrees)
     std::vector<bool> hasEmotionApplied;  // Tracks which chords actually have emotions applied
     int selectedChordIndexForEmotion = -1;  // Track which chord is selected for emotion editing
+    bool isPreviewPlaying = false;  // Track if preview from play button is active
 
     
     //==============================================================================
@@ -406,6 +436,9 @@ private:
     void updateDisplay();
     void updateTimeSignature();
     void updateChordDuration();
+    
+    // Timer callback for preview chord stop
+    void timerCallback() override;
     
     // Chord progression builder functions
     void addChordToProgression(int scaleDegree);
