@@ -105,6 +105,9 @@ public:
         
         // Set play button text to simple ASCII character
         playButton.setButtonText(">");
+        
+        // Override play button to trigger on mouse down instead of click
+        playButton.setTriggeredOnMouseDown(true);
     }
     
     void resized() override
@@ -138,166 +141,132 @@ enum class WaveformType
 };
 
 //==============================================================================
-// Synthesizer Voice with Multiple Waveforms
-class SineWaveVoice : public juce::SynthesiserVoice
+// Simple Sampler Voice - just plays the sample file naturally
+class SimpleSamplerVoice : public juce::SynthesiserVoice
 {
 public:
-    SineWaveVoice() : waveformType(WaveformType::Sine) {}
-    
-    void setWaveform(WaveformType type) { waveformType = type; }
-    
     bool canPlaySound(juce::SynthesiserSound* sound) override
     {
-        return true; // Accept any sound for simplicity
+        return dynamic_cast<const juce::SamplerSound*>(sound) != nullptr;
     }
     
-    void startNote(int midiNoteNumber, float velocity, juce::SynthesiserSound*, int) override
+    void startNote(int midiNoteNumber, float velocity, juce::SynthesiserSound* s, int /*currentPitchWheelPosition*/) override
     {
-        frequency = juce::MidiMessage::getMidiNoteInHertz(midiNoteNumber);
-        level = velocity * 0.3;
-        tailOff = 0.0;
-        envelope = 1.0;
-        sampleCount = 0;
-        
-        auto cyclesPerSample = frequency / getSampleRate();
-        angleDelta = cyclesPerSample * 2.0 * juce::MathConstants<double>::pi;
+        if (auto* sound = dynamic_cast<const juce::SamplerSound*>(s))
+        {
+            pitchRatio = 1.0;
+            sourceSamplePosition = 0.0;
+            lgain = velocity;
+            rgain = velocity;
+            // Note: gainMultiplier should be set via setGainMultiplier() before calling noteOn
+            // Don't reset it here or it will override the value we just set
+            
+            adsr.setSampleRate(getSampleRate());
+            adsr.setParameters({0.01, 0.0, 1.0, 0.1}); // Quick attack, full sustain, quick release
+            adsr.noteOn();
+            
+            audioData = sound->getAudioData();
+            DBG("SimpleSamplerVoice: Playing note " << midiNoteNumber << " with gain multiplier " << gainMultiplier);
+        }
     }
     
-    void stopNote(float, bool allowTailOff) override
+    void setGainMultiplier(float multiplier)
+    {
+        gainMultiplier = multiplier;
+    }
+    
+    void stopNote(float /*velocity*/, bool allowTailOff) override
     {
         if (allowTailOff)
         {
-            if (tailOff == 0.0)
-                tailOff = 1.0;
+            adsr.noteOff();
         }
         else
         {
             clearCurrentNote();
-            angleDelta = 0.0;
+            adsr.reset();
         }
+        // Reset gain multiplier when note stops so voice is clean for next use
+        gainMultiplier = 1.0f;
     }
     
-    void pitchWheelMoved(int) override {}
-    void controllerMoved(int, int) override {}
+    void pitchWheelMoved(int /*newValue*/) override {}
+    void controllerMoved(int /*controllerNumber*/, int /*newValue*/) override {}
     
     void renderNextBlock(juce::AudioBuffer<float>& outputBuffer, int startSample, int numSamples) override
     {
-        if (angleDelta != 0.0)
+        if (audioData == nullptr || !adsr.isActive())
         {
-            if (tailOff > 0.0)
+            clearCurrentNote();
+            return;
+        }
+        
+        auto numChannels = juce::jmin(outputBuffer.getNumChannels(), audioData->getNumChannels());
+        auto dataLength = audioData->getNumSamples();
+        
+        while (--numSamples >= 0)
+        {
+            auto pos = static_cast<int>(sourceSamplePosition);
+            auto envelopeValue = adsr.getNextSample();
+            
+            if (pos >= dataLength - 1)
             {
-                while (--numSamples >= 0)
-                {
-                    auto currentSample = (float)(generatePianoSound(currentAngle) * level * tailOff);
-                    
-                    for (auto i = outputBuffer.getNumChannels(); --i >= 0;)
-                        outputBuffer.addSample(i, startSample, currentSample);
-                    
-                    currentAngle += angleDelta;
-                    ++startSample;
-                    sampleCount++;
-                    
-                    tailOff *= 0.9995; // Slower release for piano-like sustain
-                    
-                    if (tailOff <= 0.005)
-                    {
-                        clearCurrentNote();
-                        angleDelta = 0.0;
-                        break;
-                    }
-                }
+                // Sample finished - stop the note
+                clearCurrentNote();
+                adsr.reset();
+                return;
+            }
+            
+            // Get interpolated sample from audio data
+            auto alpha = static_cast<float>(sourceSamplePosition - pos);
+            auto invAlpha = 1.0f - alpha;
+            auto nextPos = pos + 1;
+            
+            auto* channelDataL = audioData->getReadPointer(0);
+            float sampleL = channelDataL[pos] * invAlpha + channelDataL[nextPos] * alpha;
+            
+            float sampleR;
+            if (numChannels > 1)
+            {
+                auto* channelDataR = audioData->getReadPointer(1);
+                sampleR = channelDataR[pos] * invAlpha + channelDataR[nextPos] * alpha;
             }
             else
             {
-                while (--numSamples >= 0)
-                {
-                    // Piano-like envelope: fast attack, exponential decay
-                    double attackTime = 0.002 * getSampleRate(); // 2ms attack
-                    double decayTime = 0.5 * getSampleRate(); // 500ms decay
-                    
-                    if (sampleCount < attackTime)
-                    {
-                        envelope = sampleCount / attackTime;
-                    }
-                    else
-                    {
-                        double decayPhase = (sampleCount - attackTime) / decayTime;
-                        envelope = 0.3 + 0.7 * std::exp(-3.0 * decayPhase); // Decay to 30% sustain level
-                    }
-                    
-                    auto currentSample = (float)(generatePianoSound(currentAngle) * level * envelope);
-                    
-                    for (auto i = outputBuffer.getNumChannels(); --i >= 0;)
-                        outputBuffer.addSample(i, startSample, currentSample);
-                    
-                    currentAngle += angleDelta;
-                    ++startSample;
-                    sampleCount++;
-                }
+                sampleR = sampleL;
             }
+            
+            outputBuffer.addSample(0, startSample, sampleL * envelopeValue * lgain * gainMultiplier);
+            if (outputBuffer.getNumChannels() > 1)
+            {
+                outputBuffer.addSample(1, startSample, sampleR * envelopeValue * rgain * gainMultiplier);
+            }
+            
+            sourceSamplePosition += pitchRatio;
+            ++startSample;
         }
     }
-
+    
 private:
-    double generatePianoSound(double angle)
-    {
-        // Piano-like sound: fundamental + harmonics with decreasing amplitudes
-        double fundamental = std::sin(angle);
-        double harmonic2 = 0.5 * std::sin(2.0 * angle);
-        double harmonic3 = 0.25 * std::sin(3.0 * angle);
-        double harmonic4 = 0.125 * std::sin(4.0 * angle);
-        double harmonic5 = 0.0625 * std::sin(5.0 * angle);
-        
-        // Mix harmonics for piano-like timbre
-        return (fundamental + harmonic2 + harmonic3 + harmonic4 + harmonic5) / 2.0;
-    }
-    
-    double generateWaveform(double angle)
-    {
-        // Normalize angle to 0-2π range
-        double normalizedAngle = std::fmod(angle, 2.0 * juce::MathConstants<double>::pi);
-        if (normalizedAngle < 0)
-            normalizedAngle += 2.0 * juce::MathConstants<double>::pi;
-        
-        switch (waveformType)
-        {
-            case WaveformType::Sine:
-                return std::sin(angle);
-                
-            case WaveformType::Sawtooth:
-                // Sawtooth: ramp from -1 to 1
-                return 2.0 * (normalizedAngle / (2.0 * juce::MathConstants<double>::pi)) - 1.0;
-                
-            case WaveformType::Square:
-                // Square: -1 or 1 based on angle
-                return (std::sin(angle) >= 0.0) ? 1.0 : -1.0;
-                
-            case WaveformType::Triangle:
-                // Triangle: folded sawtooth
-                {
-                    double t = normalizedAngle / (2.0 * juce::MathConstants<double>::pi);
-                    return 4.0 * std::abs(t - 0.5) - 1.0;
-                }
-                
-            default:
-                return std::sin(angle);
-        }
-    }
-    
-    WaveformType waveformType;
-    double currentAngle = 0.0, angleDelta = 0.0, level = 0.0, tailOff = 0.0;
-    double frequency = 0.0;
-    double envelope = 0.0;
-    int sampleCount = 0;
+    double pitchRatio = 0.0;
+    double sourceSamplePosition = 0.0;
+    float lgain = 0.0f, rgain = 0.0f;
+    float gainMultiplier = 1.0f;
+    juce::ADSR adsr;
+    const juce::AudioBuffer<float>* audioData = nullptr;
 };
 
 //==============================================================================
-// Simple Synthesizer Sound
-class SineWaveSound : public juce::SynthesiserSound
+// Sample loader utility
+class SampleLoader
 {
 public:
-    bool appliesToNote(int) override { return true; }
-    bool appliesToChannel(int) override { return true; }
+    static std::unique_ptr<juce::AudioFormatReader> loadAudioFile(const juce::File& file)
+    {
+        juce::AudioFormatManager formatManager;
+        formatManager.registerBasicFormats();
+        return std::unique_ptr<juce::AudioFormatReader>(formatManager.createReaderFor(file));
+    }
 };
 
 //==============================================================================
@@ -336,7 +305,8 @@ enum class ScaleType
     your controls and content.
 */
 class MainComponent  : public juce::AudioAppComponent,
-                       private juce::Timer
+                       private juce::Timer,
+                       public juce::FileDragAndDropTarget
 {
 public:
     //==============================================================================
@@ -354,6 +324,52 @@ public:
     
     //==============================================================================
     void mouseDrag(const juce::MouseEvent& event) override;
+    
+    //==============================================================================
+    // File drag and drop
+    bool isInterestedInFileDrag(const juce::StringArray& files) override;
+    void filesDropped(const juce::StringArray& files, int x, int y) override;
+    
+    //==============================================================================
+    // Sample loading
+    void loadSamples(const juce::File& sampleDirectory);
+    void loadSample(int midiNote, const juce::File& audioFile);
+    int parseMidiNoteFromName(const juce::String& noteName);
+
+    //==============================================================================
+    // Chord analysis structure
+    struct AnalyzedChord
+    {
+        std::vector<int> midiNotes;           // Raw MIDI notes
+        int scaleDegree;                       // 1-7 in the key
+        KeyManager::ChordType quality;         // Major, Minor, Dom7, etc.
+        int inversion;                         // 0=root, 1=1st, 2=2nd, 3=3rd
+        
+        AnalyzedChord() : scaleDegree(1), quality(KeyManager::ChordType::Major), inversion(0) {}
+    };
+    
+    //==============================================================================
+    // Chord definition for roman numeral progressions (transposable to any key)
+    struct ChordDefinition
+    {
+        int scaleDegree;                       // 1-7 (I-VII)
+        KeyManager::ChordType quality;         // Chord quality (Major, Minor, etc.)
+        int inversion;                         // 0=root, 1=1st, 2=2nd, 3=3rd
+        
+        ChordDefinition(int degree = 1, KeyManager::ChordType q = KeyManager::ChordType::Major, int inv = 0)
+            : scaleDegree(degree), quality(q), inversion(inv) {}
+    };
+    
+    // Progression definition with both major and minor versions
+    struct ProgressionDefinition
+    {
+        std::string name;
+        std::vector<ChordDefinition> majorVersion;  // Roman numerals for major key
+        std::vector<ChordDefinition> minorVersion;  // Roman numerals for minor key
+    };
+    
+    // Generate MIDI notes from a ChordDefinition in the current key
+    std::vector<int> generateChordFromDefinition(const ChordDefinition& def);
 
     //==============================================================================
     void applyTheme();  // Temporarily disabled
@@ -372,11 +388,15 @@ private:
     juce::ComboBox progressionsDropdown;  // Dummy dropdown for progressions
     juce::ComboBox chordTypeComboBox;
     juce::ComboBox timeSignatureComboBox;
+    juce::ComboBox alterationComboBox;  // Chord quality/alteration selector
+    juce::ComboBox inversionComboBox;   // Inversion selector (root, 1st, 2nd, etc.)
     juce::TextButton playStopButton;  // Combined play/stop button
     juce::ToggleButton loopButton;
     juce::Label tempoEditor;  // Text field for tempo entry
     juce::TextButton audioSettingsButton;
     juce::TextButton midiDragButton;  // Button to drag MIDI progression to DAW
+    juce::Slider rootBoostSlider;  // Slider to control root note volume boost
+    juce::Label rootBoostLabel;    // Label for root boost slider
     
     // Emotion Wheel components
     std::array<SplitButton, 24> emotionButtons;  // Grid of emotion split buttons
@@ -393,6 +413,8 @@ private:
     juce::Label tempoLabel;
     juce::Label timeSignatureLabel;
     juce::Label voicingLabel;
+    juce::Label alterationLabel;
+    juce::Label inversionLabel;
     
     // Key Manager
     KeyManager keyManager;
@@ -405,6 +427,8 @@ private:
     
     // MIDI and Audio Components
     juce::Synthesiser synth;
+    juce::AudioFormatManager formatManager;
+    std::map<int, std::unique_ptr<juce::AudioBuffer<float>>> sampleCache;
     juce::MidiKeyboardState keyboardState;
     juce::MidiKeyboardComponent keyboard;
     
@@ -425,9 +449,11 @@ private:
     std::vector<int> customProgressionDegrees;  // Stores the scale degrees (1-7) for custom progression
     std::vector<EmotionWheel::Emotion> customProgressionEmotions;  // Stores applied emotions (parallel to customProgressionDegrees)
     std::vector<bool> hasEmotionApplied;  // Tracks which chords actually have emotions applied
+    std::vector<KeyManager::ChordType> customProgressionAlterations;  // Stores chord qualities/alterations
+    std::vector<int> customProgressionInversions;  // Stores inversions (0=root, 1=1st, 2=2nd, etc.)
     int selectedChordIndexForEmotion = -1;  // Track which chord is selected for emotion editing
     bool isPreviewPlaying = false;  // Track if preview from play button is active
-
+    float rootBoostAmount = 0.7f;  // Root note volume multiplier (1.0 = no boost, 2.0 = double volume)
     
     //==============================================================================
     // Callback functions
@@ -448,6 +474,7 @@ private:
     void updateCustomProgressionDisplay();
     void playCustomProgression();
     void updateChordButtonLabels();
+    void loadSelectedProgression();
     
     // Emotion Wheel functions
     void updateChordSelector();
@@ -455,6 +482,12 @@ private:
     void applyEmotionToChord();
     void updateEmotionDescription();
     void selectChordForEmotionWheel(int chordIndex);
+    
+    // Alteration and Inversion functions
+    void updateAlterationComboBox();
+    void updateInversionComboBox();
+    void applyAlterationToChord();
+    void applyInversionToChord();
 
     
     // MIDI Playback functions
@@ -465,6 +498,16 @@ private:
     void showAudioSettings();
     void tryInitializeAudioDevice();
     void detectSystemAudioDevices();
+    
+    // MIDI file processing
+    void processMidiFile(const juce::File& file);
+    juce::String extractChordsFromMidi(const juce::MidiFile& midiFile);
+    
+    // Chord analysis helpers
+    AnalyzedChord analyzeChord(const std::vector<int>& midiNotes, int keyRoot);
+    KeyManager::ChordType detectChordQuality(const std::vector<int>& intervals);
+    int detectInversion(const std::vector<int>& midiNotes, const std::vector<int>& intervals);
+    int detectScaleDegree(int rootNote, int keyRoot, bool isMajorKey);
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (MainComponent)
 };

@@ -158,8 +158,8 @@ std::vector<int> KeyManager::generateTriad(ScaleDegree degree) const
     
     if (degreeIndex >= 0 && degreeIndex < 7)
     {
-        // Base octave (middle C is 60, so we start from C4)
-        int baseOctave = 60;
+        // Base octave (48 = C3, one octave below middle C)
+        int baseOctave = 48;
         
         // Stack thirds diatonically using scale degrees
         // Root = 1st scale degree, Third = 3rd scale degree, Fifth = 5th scale degree
@@ -167,9 +167,11 @@ std::vector<int> KeyManager::generateTriad(ScaleDegree degree) const
         int third = baseOctave + scaleNotes[(degreeIndex + 2) % 7];         // Third (3rd) 
         int fifth = baseOctave + scaleNotes[(degreeIndex + 4) % 7];         // Fifth (5th)
         
-        // Ensure proper octave ordering (third and fifth above root)
-        while (third <= root) third += 12;
-        while (fifth <= third) fifth += 12;
+        // Keep notes in close voicing within same octave
+        // If third is below root, move it up to be above root
+        if (third < root) third += 12;
+        // If fifth is below root, move it up to be above root  
+        if (fifth < root) fifth += 12;
         
         // Keep chords in a reasonable range
         while (root >= 84) { root -= 12; third -= 12; fifth -= 12; }
@@ -191,16 +193,16 @@ std::vector<int> KeyManager::generateSeventh(ScaleDegree degree) const
     
     if (degreeIndex >= 0 && degreeIndex < 7 && !chord.empty())
     {
-        // Base octave (middle C is 60, so we start from C4)
-        int baseOctave = 60;
+        // Base octave (48 = C3, one octave below middle C)
+        int baseOctave = 48;
         
         // Add seventh diatonically - use the 7th scale degree from the root
         // This gives us proper diatonic seventh chords (not chromatic)
         int seventh = baseOctave + scaleNotes[(degreeIndex + 6) % 7];  // 7th scale degree
         
-        // Ensure seventh is above the fifth (last note in chord)
-        int fifth = chord.back();
-        while (seventh <= fifth) seventh += 12;
+        // Keep seventh in same octave as root, but above it
+        int root = chord[0];
+        if (seventh < root) seventh += 12;
         
         // Keep in reasonable range
         while (seventh >= 96) seventh -= 12;
@@ -217,8 +219,8 @@ std::vector<int> KeyManager::generateChord(ScaleDegree degree, ChordType type) c
     int rootNote = getNoteFromDegree(degree);
     auto intervals = getChordIntervals(type);
     
-    // Base octave (middle C is 60, so we start from C4)
-    int baseOctave = 60;
+    // Base octave (48 = C3, one octave below middle C)
+    int baseOctave = 48;
     
     for (int interval : intervals)
     {
@@ -316,7 +318,7 @@ std::vector<int> KeyManager::applyVoicing(const std::vector<int>& chord, Voicing
             // Take 2nd highest note and drop it an octave
             if (voicedChord.size() >= 3)
             {
-                int secondHighestIdx = voicedChord.size() - 2;
+                int secondHighestIdx = static_cast<int>(voicedChord.size()) - 2;
                 voicedChord[secondHighestIdx] -= 12;
                 std::sort(voicedChord.begin(), voicedChord.end());
             }
@@ -326,7 +328,7 @@ std::vector<int> KeyManager::applyVoicing(const std::vector<int>& chord, Voicing
             // Take 3rd highest note and drop it an octave
             if (voicedChord.size() >= 4)
             {
-                int thirdHighestIdx = voicedChord.size() - 3;
+                int thirdHighestIdx = static_cast<int>(voicedChord.size()) - 3;
                 voicedChord[thirdHighestIdx] -= 12;
                 std::sort(voicedChord.begin(), voicedChord.end());
             }
@@ -480,7 +482,14 @@ std::string KeyManager::getChordName(ScaleDegree degree, ChordType type) const
         case ChordType::HalfDiminished7: return rootName + "ø7";
         case ChordType::Sus2: return rootName + "sus2";
         case ChordType::Sus4: return rootName + "sus4";
+        case ChordType::Add4: return rootName + "add4";
+        case ChordType::MinorAdd4: return rootName + "m(add4)";
         case ChordType::Add9: return rootName + "add9";
+        case ChordType::MinorAdd9: return rootName + "m(add9)";
+        case ChordType::Add11: return rootName + "add11";
+        case ChordType::MinorAdd11: return rootName + "m(add11)";
+        case ChordType::Sixth: return rootName + "6";
+        case ChordType::MinorSixth: return rootName + "m6";
         case ChordType::Major9: return rootName + "M9";
         case ChordType::Minor9: return rootName + "m9";
         case ChordType::Dominant9: return rootName + "9";
@@ -508,7 +517,7 @@ KeyManager::ScaleDegree KeyManager::getDegreeFromNote(int note) const
     
     if (it != scaleNotes.end())
     {
-        int index = std::distance(scaleNotes.begin(), it);
+        int index = static_cast<int>(std::distance(scaleNotes.begin(), it));
         return static_cast<ScaleDegree>(index + 1);
     }
     
@@ -552,7 +561,14 @@ std::vector<int> KeyManager::getChordIntervals(ChordType type) const
         case ChordType::HalfDiminished7: return {0, 3, 6, 10};
         case ChordType::Sus2: return {0, 2, 7};
         case ChordType::Sus4: return {0, 5, 7};
-        case ChordType::Add9: return {0, 4, 7, 14}; // 14 = 2 + 12 (octave)
+        case ChordType::Add4: return {0, 4, 5, 7};  // Major triad + 4th
+        case ChordType::MinorAdd4: return {0, 3, 5, 7};  // Minor triad + 4th
+        case ChordType::Add9: return {0, 4, 7, 14}; // Major triad + 9th (14 = 2 + 12)
+        case ChordType::MinorAdd9: return {0, 3, 7, 14}; // Minor triad + 9th
+        case ChordType::Add11: return {0, 4, 7, 17}; // Major triad + 11th
+        case ChordType::MinorAdd11: return {0, 3, 7, 17}; // Minor triad + 11th
+        case ChordType::Sixth: return {0, 4, 7, 9};  // Major triad + 6th
+        case ChordType::MinorSixth: return {0, 3, 7, 9};  // Minor triad + 6th
         case ChordType::Major9: return {0, 4, 7, 11, 14};
         case ChordType::Minor9: return {0, 3, 7, 10, 14};
         case ChordType::Dominant9: return {0, 4, 7, 10, 14};
@@ -564,3 +580,73 @@ int KeyManager::transposeNote(int note, int semitones) const
 {
     return (note + semitones) % 12;
 }
+
+// Generate chord from numeric degree (helper for custom progressions)
+std::vector<int> KeyManager::generateChord(int scaleDegree, int rootNote, const std::string& scale) const
+{
+    std::vector<int> chord;
+    
+    // Get the scale pattern
+    const auto& scalePattern = (scale == "Major") ? majorScalePattern : minorScalePattern;
+    
+    // Calculate root note for this degree
+    int degreeIndex = scaleDegree - 1; // Convert 1-7 to 0-6
+    if (degreeIndex < 0 || degreeIndex >= scalePattern.size())
+        return chord; // Invalid degree
+    
+    int chordRoot = rootNote + scalePattern[degreeIndex];
+    
+    // Build triad: root, third, fifth from the scale
+    chord.push_back(chordRoot);
+    chord.push_back(chordRoot + scalePattern[(degreeIndex + 2) % 7] - scalePattern[degreeIndex]); // third
+    chord.push_back(chordRoot + scalePattern[(degreeIndex + 4) % 7] - scalePattern[degreeIndex] + (degreeIndex + 4 >= 7 ? 12 : 0)); // fifth
+    
+    return chord;
+}
+
+// Generate chord with specific alteration and inversion
+std::vector<int> KeyManager::generateChordWithAlteration(int scaleDegree, int rootNote, const std::string& scale, ChordType alteration, int inversion) const
+{
+    std::vector<int> chord;
+    
+    // rootNote is already the correct MIDI note (e.g., 60 + scale interval for degree)
+    // So we use it directly as the chord root
+    int chordRoot = rootNote;
+    
+    // Get the intervals for the alteration/chord type
+    auto intervals = getChordIntervals(alteration);
+    
+    // Build chord from root + intervals
+    for (int interval : intervals)
+    {
+        chord.push_back(chordRoot + interval);
+    }
+    
+    // Apply inversion if specified
+    if (inversion > 0)
+    {
+        chord = applyInversion(chord, inversion);
+    }
+    
+    return chord;
+}
+
+// Apply inversion to a chord
+std::vector<int> KeyManager::applyInversion(const std::vector<int>& chord, int inversion) const
+{
+    if (chord.empty() || inversion <= 0 || inversion >= chord.size())
+        return chord; // No inversion or invalid
+    
+    std::vector<int> inverted = chord;
+    
+    // Rotate the chord by moving bass notes up an octave
+    for (int i = 0; i < inversion; ++i)
+    {
+        int bassNote = inverted[0];
+        inverted.erase(inverted.begin());
+        inverted.push_back(bassNote + 12); // Move bass up octave
+    }
+    
+    return inverted;
+}
+

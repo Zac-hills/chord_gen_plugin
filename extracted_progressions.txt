@@ -1,0 +1,353 @@
+// Extracted chord progressions from MIDI files
+std::vector<AnalyzedChord> analyzedChords;
+
+case 2: // chord progressions1.mid
+    {
+        AnalyzedChord c1; c1.midiNotes = {45, 52, 60}; c1.scaleDegree = 1; c1.quality = KeyManager::ChordType::Major; c1.inversion = 0;
+        AnalyzedChord c2; c2.midiNotes = {43, 50, 59}; c2.scaleDegree = 1; c2.quality = KeyManager::ChordType::Major; c2.inversion = 0;
+        AnalyzedChord c3; c3.midiNotes = {38, 45, 53, 57}; c3.scaleDegree = 1; c3.quality = KeyManager::ChordType::Major; c3.inversion = 0;
+        AnalyzedChord c4; c4.midiNotes = {41, 48, 53, 57}; c4.scaleDegree = 1; c4.quality = KeyManager::ChordType::Major; c4.inversion = 0;
+        analyzedChords = {c1, c2, c3, c4};
+    }
+    break;
+
+case 3: // chord progressions10.mid
+    {
+        AnalyzedChord c1; c1.midiNotes = {45, 48, 52, 57}; c1.scaleDegree = 1; c1.quality = KeyManager::ChordType::Major; c1.inversion = 0;
+        AnalyzedChord c2; c2.midiNotes = {43, 47, 50, 57}; c2.scaleDegree = 1; c2.quality = KeyManager::ChordType::Major; c2.inversion = 0;
+        AnalyzedChord c3; c3.midiNotes = {41, 45, 48, 57}; c3.scaleDegree = 1; c3.quality = KeyManager::ChordType::Major; c3.inversion = 0;
+        AnalyzedChord c4; c4.midiNotes = {43, 47, 50, 57}; c4.scaleDegree = 1; c4.quality = KeyManager::ChordType::Major; c4.inversion = 0;
+        analyzedChords = {c1, c2, c3, c4};
+    }
+    break;
+
+case 4: // chord progressions11.mid
+    {
+        AnalyzedChord c1; c1.midiNotes = {41, 48, 57}; c1.scaleDegree = 1; c1.quality = KeyManager::ChordType::Major; c1.inversion = 0;
+        AnalyzedChord c2; c2.midiNotes = {45, 52, 57, 60}; c2.scaleDegree = 1; c2.quality = KeyManager::ChordType::Major; c2.inversion = 0;
+        AnalyzedChord c3; c3.midiNotes = {43, 50, 57, 59}; c3.scaleDegree = 1; c3.quality = KeyManager::ChordType::Major; c3.inversion = 0;
+        AnalyzedChord c4; c4.midiNotes = {40, 47, 55, 57}; c4.scaleDegree = 1; c4.quality = KeyManager::ChordType::Major; c4.inversion = 0;
+        analyzedChords = {c1, c2, c3, c4};
+    }
+    break;
+
+case 5: // chord progressions12.mid
+    {
+        AnalyzedChord c1; c1.midiNotes = {40, 43, 47, 50, 55}; c1.scaleDegree = 1; c1.quality = KeyManager::ChordType::Major; c1.inversion = 0;
+        AnalyzedChord c2; c2.midiNotes = {41, 45, 48, 52, 57}; c2.scaleDegree = 1; c2.quality = KeyManager::ChordType::Major; c2.inversion = 0;
+        AnalyzedChord c3; c3.midiNotes = {43, 50, 55, 59}; c3.scaleDegree = 1; c3.quality = KeyManager::ChordType::Major; c3.inversion = 0;
+        AnalyzedChord c4; c4.midiNotes = {45, 52, 57, 60}; c4.scaleDegree = 1; c4.quality = KeyManager::ChordType::Major; c4.inversion = 0;
+        analyzedChords = {c1, c2, c3, c4};
+    }
+    break;
+
+case 6: // chord progressions13.mid
+    {
+        AnalyzedChord c1; c1.midiNotes = {40, 47, 55}; c1.scaleDegree = 1; c1.quality = KeyManager::ChordType::Major; c1.inversion = 0;
+        AnalyzedChord c2; c2.midiNotes = {41, 48, 57}; c2.scaleDegree = 1; c2.quality = KeyManager::ChordType::Major; c2.inversion = 0;
+        AnalyzedChord c3; c3.midiNotes = {43, 50, 59}; c3.scaleDegree = 1; c3.quality = KeyManager::ChordType::Major; c3.inversion = 0;
+        AnalyzedChord c4; c4.midiNotes = {45, 52, 60}; c4.scaleDegree = 1; c4.quality = KeyManager::ChordType::Major; c4.inversion = 0;
+        analyzedChords = {c1, c2, c3, c4};
+    }
+    break;
+
+case 7: // chord progressions14.mid
+    {
+        AnalyzedChord c1; c1.midiNotes = {40, 47, 55}; c1.scaleDegree = 1; c1.quality = KeyManager::ChordType::Major; c1.inversion = 0;
+        AnalyzedChord c2; c2.midiNotes = {41, 48, 57}; c2.scaleDegree = 1; c2.quality = KeyManager::ChordType::Major; c2.inversion = 0;
+        AnalyzedChord c3; c3.midiNotes = {43, 50, 59}; c3.scaleDegree = 1; c3.quality = KeyManager::ChordType::Major; c3.inversion = 0;
+        AnalyzedChord c4; c4.midiNotes = {45, 52, 60}; c4.scaleDegree = 1; c4.quality = KeyManager::ChordType::Major; c4.inversion = 0;
+        analyzedChords = {c1, c2, c3, c4};
+    }
+    break;
+
+case 8: // chord progressions15.mid
+    {
+        AnalyzedChord c1; c1.midiNotes = {45, 52, 55, 60}; c1.scaleDegree = 1; c1.quality = KeyManager::ChordType::Major; c1.inversion = 0;
+        AnalyzedChord c2; c2.midiNotes = {40, 47, 50, 55}; c2.scaleDegree = 1; c2.quality = KeyManager::ChordType::Major; c2.inversion = 0;
+        AnalyzedChord c3; c3.midiNotes = {41, 48, 52, 57}; c3.scaleDegree = 1; c3.quality = KeyManager::ChordType::Major; c3.inversion = 0;
+        AnalyzedChord c4; c4.midiNotes = {38, 45, 48, 53}; c4.scaleDegree = 1; c4.quality = KeyManager::ChordType::Major; c4.inversion = 0;
+        analyzedChords = {c1, c2, c3, c4};
+    }
+    break;
+
+case 9: // chord progressions16.mid
+    {
+        AnalyzedChord c1; c1.midiNotes = {45, 52, 55, 60}; c1.scaleDegree = 1; c1.quality = KeyManager::ChordType::Major; c1.inversion = 0;
+        AnalyzedChord c2; c2.midiNotes = {40, 47, 50, 55}; c2.scaleDegree = 1; c2.quality = KeyManager::ChordType::Major; c2.inversion = 0;
+        AnalyzedChord c3; c3.midiNotes = {38, 45, 48, 53}; c3.scaleDegree = 1; c3.quality = KeyManager::ChordType::Major; c3.inversion = 0;
+        AnalyzedChord c4; c4.midiNotes = {38, 45, 48, 52}; c4.scaleDegree = 1; c4.quality = KeyManager::ChordType::Major; c4.inversion = 0;
+        analyzedChords = {c1, c2, c3, c4};
+    }
+    break;
+
+case 10: // chord progressions17.mid
+    {
+        AnalyzedChord c1; c1.midiNotes = {45, 52, 55, 60}; c1.scaleDegree = 1; c1.quality = KeyManager::ChordType::Major; c1.inversion = 0;
+        AnalyzedChord c2; c2.midiNotes = {40, 47, 50, 55}; c2.scaleDegree = 1; c2.quality = KeyManager::ChordType::Major; c2.inversion = 0;
+        AnalyzedChord c3; c3.midiNotes = {41, 48, 52, 57}; c3.scaleDegree = 1; c3.quality = KeyManager::ChordType::Major; c3.inversion = 0;
+        AnalyzedChord c4; c4.midiNotes = {43, 47, 50, 55}; c4.scaleDegree = 1; c4.quality = KeyManager::ChordType::Major; c4.inversion = 0;
+        analyzedChords = {c1, c2, c3, c4};
+    }
+    break;
+
+case 11: // chord progressions18.mid
+    {
+        AnalyzedChord c1; c1.midiNotes = {45, 52, 60}; c1.scaleDegree = 1; c1.quality = KeyManager::ChordType::Major; c1.inversion = 0;
+        AnalyzedChord c2; c2.midiNotes = {48, 55, 64}; c2.scaleDegree = 1; c2.quality = KeyManager::ChordType::Major; c2.inversion = 0;
+        AnalyzedChord c3; c3.midiNotes = {41, 48, 57}; c3.scaleDegree = 1; c3.quality = KeyManager::ChordType::Major; c3.inversion = 0;
+        AnalyzedChord c4; c4.midiNotes = {41, 48, 57}; c4.scaleDegree = 1; c4.quality = KeyManager::ChordType::Major; c4.inversion = 0;
+        analyzedChords = {c1, c2, c3, c4};
+    }
+    break;
+
+case 12: // chord progressions19.mid
+    {
+        AnalyzedChord c1; c1.midiNotes = {45, 52, 60}; c1.scaleDegree = 1; c1.quality = KeyManager::ChordType::Major; c1.inversion = 0;
+        AnalyzedChord c2; c2.midiNotes = {48, 55, 62}; c2.scaleDegree = 1; c2.quality = KeyManager::ChordType::Major; c2.inversion = 0;
+        AnalyzedChord c3; c3.midiNotes = {41, 48, 57}; c3.scaleDegree = 1; c3.quality = KeyManager::ChordType::Major; c3.inversion = 0;
+        AnalyzedChord c4; c4.midiNotes = {41, 48, 57}; c4.scaleDegree = 1; c4.quality = KeyManager::ChordType::Major; c4.inversion = 0;
+        analyzedChords = {c1, c2, c3, c4};
+    }
+    break;
+
+case 13: // chord progressions2.mid
+    {
+        AnalyzedChord c1; c1.midiNotes = {45, 52, 57, 60}; c1.scaleDegree = 1; c1.quality = KeyManager::ChordType::Major; c1.inversion = 0;
+        AnalyzedChord c2; c2.midiNotes = {40, 47, 55, 57}; c2.scaleDegree = 1; c2.quality = KeyManager::ChordType::Major; c2.inversion = 0;
+        AnalyzedChord c3; c3.midiNotes = {41, 48, 57}; c3.scaleDegree = 1; c3.quality = KeyManager::ChordType::Major; c3.inversion = 0;
+        AnalyzedChord c4; c4.midiNotes = {38, 45, 53, 57}; c4.scaleDegree = 1; c4.quality = KeyManager::ChordType::Major; c4.inversion = 0;
+        analyzedChords = {c1, c2, c3, c4};
+    }
+    break;
+
+case 14: // chord progressions20.mid
+    {
+        AnalyzedChord c1; c1.midiNotes = {57, 60, 64, 67}; c1.scaleDegree = 1; c1.quality = KeyManager::ChordType::Major; c1.inversion = 0;
+        AnalyzedChord c2; c2.midiNotes = {52, 55, 59, 62}; c2.scaleDegree = 1; c2.quality = KeyManager::ChordType::Major; c2.inversion = 0;
+        AnalyzedChord c3; c3.midiNotes = {53, 57, 60, 64}; c3.scaleDegree = 1; c3.quality = KeyManager::ChordType::Major; c3.inversion = 0;
+        AnalyzedChord c4; c4.midiNotes = {53, 57, 60, 64}; c4.scaleDegree = 1; c4.quality = KeyManager::ChordType::Major; c4.inversion = 0;
+        analyzedChords = {c1, c2, c3, c4};
+    }
+    break;
+
+case 15: // chord progressions21.mid
+    {
+        AnalyzedChord c1; c1.midiNotes = {41, 48, 57}; c1.scaleDegree = 1; c1.quality = KeyManager::ChordType::Major; c1.inversion = 0;
+        AnalyzedChord c2; c2.midiNotes = {45, 52, 60}; c2.scaleDegree = 1; c2.quality = KeyManager::ChordType::Major; c2.inversion = 0;
+        AnalyzedChord c3; c3.midiNotes = {48, 55, 62}; c3.scaleDegree = 1; c3.quality = KeyManager::ChordType::Major; c3.inversion = 0;
+        AnalyzedChord c4; c4.midiNotes = {43, 50, 59}; c4.scaleDegree = 1; c4.quality = KeyManager::ChordType::Major; c4.inversion = 0;
+        analyzedChords = {c1, c2, c3, c4};
+    }
+    break;
+
+case 16: // chord progressions22.mid
+    {
+        AnalyzedChord c1; c1.midiNotes = {41, 48, 57}; c1.scaleDegree = 1; c1.quality = KeyManager::ChordType::Major; c1.inversion = 0;
+        AnalyzedChord c2; c2.midiNotes = {45, 48, 52, 60}; c2.scaleDegree = 1; c2.quality = KeyManager::ChordType::Major; c2.inversion = 0;
+        AnalyzedChord c3; c3.midiNotes = {48, 55, 64}; c3.scaleDegree = 1; c3.quality = KeyManager::ChordType::Major; c3.inversion = 0;
+        AnalyzedChord c4; c4.midiNotes = {43, 48, 50, 59}; c4.scaleDegree = 1; c4.quality = KeyManager::ChordType::Major; c4.inversion = 0;
+        analyzedChords = {c1, c2, c3, c4};
+    }
+    break;
+
+case 17: // chord progressions23.mid
+    {
+        AnalyzedChord c1; c1.midiNotes = {53, 60, 69}; c1.scaleDegree = 1; c1.quality = KeyManager::ChordType::Major; c1.inversion = 0;
+        AnalyzedChord c2; c2.midiNotes = {52, 60, 67}; c2.scaleDegree = 1; c2.quality = KeyManager::ChordType::Major; c2.inversion = 0;
+        AnalyzedChord c3; c3.midiNotes = {45, 57, 60, 64}; c3.scaleDegree = 1; c3.quality = KeyManager::ChordType::Major; c3.inversion = 0;
+        AnalyzedChord c4; c4.midiNotes = {43, 55, 59, 62}; c4.scaleDegree = 1; c4.quality = KeyManager::ChordType::Major; c4.inversion = 0;
+        analyzedChords = {c1, c2, c3, c4};
+    }
+    break;
+
+case 18: // chord progressions24.mid
+    {
+        AnalyzedChord c1; c1.midiNotes = {53, 60, 64}; c1.scaleDegree = 1; c1.quality = KeyManager::ChordType::Major; c1.inversion = 0;
+        AnalyzedChord c2; c2.midiNotes = {55, 62, 64}; c2.scaleDegree = 1; c2.quality = KeyManager::ChordType::Major; c2.inversion = 0;
+        AnalyzedChord c3; c3.midiNotes = {57, 60, 64}; c3.scaleDegree = 1; c3.quality = KeyManager::ChordType::Major; c3.inversion = 0;
+        AnalyzedChord c4; c4.midiNotes = {55, 62, 64}; c4.scaleDegree = 1; c4.quality = KeyManager::ChordType::Major; c4.inversion = 0;
+        analyzedChords = {c1, c2, c3, c4};
+    }
+    break;
+
+case 19: // chord progressions25.mid
+    {
+        AnalyzedChord c1; c1.midiNotes = {41, 53, 57, 60}; c1.scaleDegree = 1; c1.quality = KeyManager::ChordType::Major; c1.inversion = 0;
+        AnalyzedChord c2; c2.midiNotes = {43, 55, 59, 60}; c2.scaleDegree = 1; c2.quality = KeyManager::ChordType::Major; c2.inversion = 0;
+        AnalyzedChord c3; c3.midiNotes = {45, 57, 60}; c3.scaleDegree = 1; c3.quality = KeyManager::ChordType::Major; c3.inversion = 0;
+        AnalyzedChord c4; c4.midiNotes = {43, 55, 59, 60}; c4.scaleDegree = 1; c4.quality = KeyManager::ChordType::Major; c4.inversion = 0;
+        analyzedChords = {c1, c2, c3, c4};
+    }
+    break;
+
+case 20: // chord progressions26.mid
+    {
+        AnalyzedChord c1; c1.midiNotes = {41, 48, 57, 60}; c1.scaleDegree = 1; c1.quality = KeyManager::ChordType::Major; c1.inversion = 0;
+        AnalyzedChord c2; c2.midiNotes = {43, 50, 59, 60}; c2.scaleDegree = 1; c2.quality = KeyManager::ChordType::Major; c2.inversion = 0;
+        AnalyzedChord c3; c3.midiNotes = {45, 52, 60}; c3.scaleDegree = 1; c3.quality = KeyManager::ChordType::Major; c3.inversion = 0;
+        AnalyzedChord c4; c4.midiNotes = {48, 52, 55, 60}; c4.scaleDegree = 1; c4.quality = KeyManager::ChordType::Major; c4.inversion = 0;
+        analyzedChords = {c1, c2, c3, c4};
+    }
+    break;
+
+case 21: // chord progressions27.mid
+    {
+        AnalyzedChord c1; c1.midiNotes = {40, 50, 55, 59}; c1.scaleDegree = 1; c1.quality = KeyManager::ChordType::Major; c1.inversion = 0;
+        AnalyzedChord c2; c2.midiNotes = {41, 52, 57, 60}; c2.scaleDegree = 1; c2.quality = KeyManager::ChordType::Major; c2.inversion = 0;
+        AnalyzedChord c3; c3.midiNotes = {43, 50, 55, 59}; c3.scaleDegree = 1; c3.quality = KeyManager::ChordType::Major; c3.inversion = 0;
+        AnalyzedChord c4; c4.midiNotes = {45, 52, 57, 60}; c4.scaleDegree = 1; c4.quality = KeyManager::ChordType::Major; c4.inversion = 0;
+        analyzedChords = {c1, c2, c3, c4};
+    }
+    break;
+
+case 22: // chord progressions28.mid
+    {
+        AnalyzedChord c1; c1.midiNotes = {41, 48, 57}; c1.scaleDegree = 1; c1.quality = KeyManager::ChordType::Major; c1.inversion = 0;
+        AnalyzedChord c2; c2.midiNotes = {43, 48, 50, 59}; c2.scaleDegree = 1; c2.quality = KeyManager::ChordType::Major; c2.inversion = 0;
+        AnalyzedChord c3; c3.midiNotes = {45, 48, 52, 60}; c3.scaleDegree = 1; c3.quality = KeyManager::ChordType::Major; c3.inversion = 0;
+        AnalyzedChord c4; c4.midiNotes = {43, 48, 50, 59}; c4.scaleDegree = 1; c4.quality = KeyManager::ChordType::Major; c4.inversion = 0;
+        analyzedChords = {c1, c2, c3, c4};
+    }
+    break;
+
+case 23: // chord progressions29.mid
+    {
+        AnalyzedChord c1; c1.midiNotes = {41, 48, 57}; c1.scaleDegree = 1; c1.quality = KeyManager::ChordType::Major; c1.inversion = 0;
+        AnalyzedChord c2; c2.midiNotes = {43, 47, 50, 57}; c2.scaleDegree = 1; c2.quality = KeyManager::ChordType::Major; c2.inversion = 0;
+        AnalyzedChord c3; c3.midiNotes = {45, 48, 52, 57}; c3.scaleDegree = 1; c3.quality = KeyManager::ChordType::Major; c3.inversion = 0;
+        AnalyzedChord c4; c4.midiNotes = {43, 47, 50, 57}; c4.scaleDegree = 1; c4.quality = KeyManager::ChordType::Major; c4.inversion = 0;
+        analyzedChords = {c1, c2, c3, c4};
+    }
+    break;
+
+case 24: // chord progressions3.mid
+    {
+        AnalyzedChord c1; c1.midiNotes = {45, 48, 52, 60}; c1.scaleDegree = 1; c1.quality = KeyManager::ChordType::Major; c1.inversion = 0;
+        AnalyzedChord c2; c2.midiNotes = {43, 48, 50, 59}; c2.scaleDegree = 1; c2.quality = KeyManager::ChordType::Major; c2.inversion = 0;
+        AnalyzedChord c3; c3.midiNotes = {41, 48, 57}; c3.scaleDegree = 1; c3.quality = KeyManager::ChordType::Major; c3.inversion = 0;
+        AnalyzedChord c4; c4.midiNotes = {36, 43, 48, 52}; c4.scaleDegree = 1; c4.quality = KeyManager::ChordType::Major; c4.inversion = 0;
+        analyzedChords = {c1, c2, c3, c4};
+    }
+    break;
+
+case 25: // chord progressions30.mid
+    {
+        AnalyzedChord c1; c1.midiNotes = {28, 43, 47, 50}; c1.scaleDegree = 1; c1.quality = KeyManager::ChordType::Major; c1.inversion = 0;
+        AnalyzedChord c2; c2.midiNotes = {29, 45, 48, 52}; c2.scaleDegree = 1; c2.quality = KeyManager::ChordType::Major; c2.inversion = 0;
+        AnalyzedChord c3; c3.midiNotes = {33, 43, 48, 52}; c3.scaleDegree = 1; c3.quality = KeyManager::ChordType::Major; c3.inversion = 0;
+        AnalyzedChord c4; c4.midiNotes = {31, 43, 47, 50}; c4.scaleDegree = 1; c4.quality = KeyManager::ChordType::Major; c4.inversion = 0;
+        analyzedChords = {c1, c2, c3, c4};
+    }
+    break;
+
+case 26: // chord progressions31.mid
+    {
+        AnalyzedChord c1; c1.midiNotes = {53, 60, 69}; c1.scaleDegree = 1; c1.quality = KeyManager::ChordType::Major; c1.inversion = 0;
+        AnalyzedChord c2; c2.midiNotes = {60, 64, 67, 76}; c2.scaleDegree = 1; c2.quality = KeyManager::ChordType::Major; c2.inversion = 0;
+        AnalyzedChord c3; c3.midiNotes = {55, 62, 71}; c3.scaleDegree = 1; c3.quality = KeyManager::ChordType::Major; c3.inversion = 0;
+        AnalyzedChord c4; c4.midiNotes = {55, 62, 71}; c4.scaleDegree = 1; c4.quality = KeyManager::ChordType::Major; c4.inversion = 0;
+        analyzedChords = {c1, c2, c3, c4};
+    }
+    break;
+
+case 27: // chord progressions32.mid
+    {
+        AnalyzedChord c1; c1.midiNotes = {53, 60, 69}; c1.scaleDegree = 1; c1.quality = KeyManager::ChordType::Major; c1.inversion = 0;
+        AnalyzedChord c2; c2.midiNotes = {60, 64, 67, 76}; c2.scaleDegree = 1; c2.quality = KeyManager::ChordType::Major; c2.inversion = 0;
+        AnalyzedChord c3; c3.midiNotes = {55, 60, 62, 71}; c3.scaleDegree = 1; c3.quality = KeyManager::ChordType::Major; c3.inversion = 0;
+        AnalyzedChord c4; c4.midiNotes = {57, 60, 64, 72}; c4.scaleDegree = 1; c4.quality = KeyManager::ChordType::Major; c4.inversion = 0;
+        analyzedChords = {c1, c2, c3, c4};
+    }
+    break;
+
+case 28: // chord progressions33.mid
+    {
+        AnalyzedChord c1; c1.midiNotes = {53, 57, 60}; c1.scaleDegree = 1; c1.quality = KeyManager::ChordType::Major; c1.inversion = 0;
+        AnalyzedChord c2; c2.midiNotes = {55, 60, 62}; c2.scaleDegree = 1; c2.quality = KeyManager::ChordType::Major; c2.inversion = 0;
+        AnalyzedChord c3; c3.midiNotes = {57, 60, 64}; c3.scaleDegree = 1; c3.quality = KeyManager::ChordType::Major; c3.inversion = 0;
+        AnalyzedChord c4; c4.midiNotes = {50, 57, 60, 65}; c4.scaleDegree = 1; c4.quality = KeyManager::ChordType::Major; c4.inversion = 0;
+        analyzedChords = {c1, c2, c3, c4};
+    }
+    break;
+
+case 29: // chord progressions34.mid
+    {
+        AnalyzedChord c1; c1.midiNotes = {53, 57, 60, 64}; c1.scaleDegree = 1; c1.quality = KeyManager::ChordType::Major; c1.inversion = 0;
+        AnalyzedChord c2; c2.midiNotes = {55, 59, 62}; c2.scaleDegree = 1; c2.quality = KeyManager::ChordType::Major; c2.inversion = 0;
+        AnalyzedChord c3; c3.midiNotes = {57, 60, 64, 67}; c3.scaleDegree = 1; c3.quality = KeyManager::ChordType::Major; c3.inversion = 0;
+        AnalyzedChord c4; c4.midiNotes = {50, 57, 60, 65}; c4.scaleDegree = 1; c4.quality = KeyManager::ChordType::Major; c4.inversion = 0;
+        analyzedChords = {c1, c2, c3, c4};
+    }
+    break;
+
+case 30: // chord progressions35.mid
+    {
+        AnalyzedChord c1; c1.midiNotes = {53, 57, 60, 64}; c1.scaleDegree = 1; c1.quality = KeyManager::ChordType::Major; c1.inversion = 0;
+        AnalyzedChord c2; c2.midiNotes = {55, 59, 62}; c2.scaleDegree = 1; c2.quality = KeyManager::ChordType::Major; c2.inversion = 0;
+        AnalyzedChord c3; c3.midiNotes = {57, 60, 64, 67}; c3.scaleDegree = 1; c3.quality = KeyManager::ChordType::Major; c3.inversion = 0;
+        AnalyzedChord c4; c4.midiNotes = {50, 57, 60, 65}; c4.scaleDegree = 1; c4.quality = KeyManager::ChordType::Major; c4.inversion = 0;
+        analyzedChords = {c1, c2, c3, c4};
+    }
+    break;
+
+case 31: // chord progressions4.mid
+    {
+        AnalyzedChord c1; c1.midiNotes = {33, 45, 48, 52}; c1.scaleDegree = 1; c1.quality = KeyManager::ChordType::Major; c1.inversion = 0;
+        AnalyzedChord c2; c2.midiNotes = {31, 43, 48, 50}; c2.scaleDegree = 1; c2.quality = KeyManager::ChordType::Major; c2.inversion = 0;
+        AnalyzedChord c3; c3.midiNotes = {29, 41, 45, 48, 52}; c3.scaleDegree = 1; c3.quality = KeyManager::ChordType::Major; c3.inversion = 0;
+        AnalyzedChord c4; c4.midiNotes = {36, 40, 43, 48}; c4.scaleDegree = 1; c4.quality = KeyManager::ChordType::Major; c4.inversion = 0;
+        analyzedChords = {c1, c2, c3, c4};
+    }
+    break;
+
+case 32: // chord progressions5.mid
+    {
+        AnalyzedChord c1; c1.midiNotes = {45, 48, 52}; c1.scaleDegree = 1; c1.quality = KeyManager::ChordType::Major; c1.inversion = 0;
+        AnalyzedChord c2; c2.midiNotes = {43, 48, 50}; c2.scaleDegree = 1; c2.quality = KeyManager::ChordType::Major; c2.inversion = 0;
+        AnalyzedChord c3; c3.midiNotes = {38, 45, 48}; c3.scaleDegree = 1; c3.quality = KeyManager::ChordType::Major; c3.inversion = 0;
+        AnalyzedChord c4; c4.midiNotes = {41, 45, 48}; c4.scaleDegree = 1; c4.quality = KeyManager::ChordType::Major; c4.inversion = 0;
+        analyzedChords = {c1, c2, c3, c4};
+    }
+    break;
+
+case 33: // chord progressions6.mid
+    {
+        AnalyzedChord c1; c1.midiNotes = {33, 40, 48}; c1.scaleDegree = 1; c1.quality = KeyManager::ChordType::Major; c1.inversion = 0;
+        AnalyzedChord c2; c2.midiNotes = {36, 40, 43, 48}; c2.scaleDegree = 1; c2.quality = KeyManager::ChordType::Major; c2.inversion = 0;
+        AnalyzedChord c3; c3.midiNotes = {38, 41, 45, 48}; c3.scaleDegree = 1; c3.quality = KeyManager::ChordType::Major; c3.inversion = 0;
+        AnalyzedChord c4; c4.midiNotes = {29, 36, 45}; c4.scaleDegree = 1; c4.quality = KeyManager::ChordType::Major; c4.inversion = 0;
+        analyzedChords = {c1, c2, c3, c4};
+    }
+    break;
+
+case 34: // chord progressions7.mid
+    {
+        AnalyzedChord c1; c1.midiNotes = {33, 40, 48}; c1.scaleDegree = 1; c1.quality = KeyManager::ChordType::Major; c1.inversion = 0;
+        AnalyzedChord c2; c2.midiNotes = {36, 43, 48, 52}; c2.scaleDegree = 1; c2.quality = KeyManager::ChordType::Major; c2.inversion = 0;
+        AnalyzedChord c3; c3.midiNotes = {38, 45, 48, 53}; c3.scaleDegree = 1; c3.quality = KeyManager::ChordType::Major; c3.inversion = 0;
+        AnalyzedChord c4; c4.midiNotes = {29, 36, 45}; c4.scaleDegree = 1; c4.quality = KeyManager::ChordType::Major; c4.inversion = 0;
+        analyzedChords = {c1, c2, c3, c4};
+    }
+    break;
+
+case 35: // chord progressions8.mid
+    {
+        AnalyzedChord c1; c1.midiNotes = {33, 36, 40, 48}; c1.scaleDegree = 1; c1.quality = KeyManager::ChordType::Major; c1.inversion = 0;
+        AnalyzedChord c2; c2.midiNotes = {29, 36, 45}; c2.scaleDegree = 1; c2.quality = KeyManager::ChordType::Major; c2.inversion = 0;
+        AnalyzedChord c3; c3.midiNotes = {36, 40, 43}; c3.scaleDegree = 1; c3.quality = KeyManager::ChordType::Major; c3.inversion = 0;
+        AnalyzedChord c4; c4.midiNotes = {31, 36, 38, 47}; c4.scaleDegree = 1; c4.quality = KeyManager::ChordType::Major; c4.inversion = 0;
+        analyzedChords = {c1, c2, c3, c4};
+    }
+    break;
+
+case 36: // chord progressions9.mid
+    {
+        AnalyzedChord c1; c1.midiNotes = {33, 36, 40, 48}; c1.scaleDegree = 1; c1.quality = KeyManager::ChordType::Major; c1.inversion = 0;
+        AnalyzedChord c2; c2.midiNotes = {29, 36, 45}; c2.scaleDegree = 1; c2.quality = KeyManager::ChordType::Major; c2.inversion = 0;
+        AnalyzedChord c3; c3.midiNotes = {36, 43, 52}; c3.scaleDegree = 1; c3.quality = KeyManager::ChordType::Major; c3.inversion = 0;
+        AnalyzedChord c4; c4.midiNotes = {38, 45, 53}; c4.scaleDegree = 1; c4.quality = KeyManager::ChordType::Major; c4.inversion = 0;
+        analyzedChords = {c1, c2, c3, c4};
+    }
+    break;
+

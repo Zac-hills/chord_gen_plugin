@@ -32,7 +32,14 @@ public:
         HalfDiminished7,
         Sus2,
         Sus4,
+        Add4,
+        MinorAdd4,
         Add9,
+        MinorAdd9,
+        Add11,
+        MinorAdd11,
+        Sixth,
+        MinorSixth,
         Major9,
         Minor9,
         Dominant9
@@ -77,6 +84,11 @@ public:
     std::vector<int> generateTriad(ScaleDegree degree) const;
     std::vector<int> generateSeventh(ScaleDegree degree) const;
     std::vector<int> generateChord(ScaleDegree degree, ChordType type) const;
+    std::vector<int> generateChord(int scaleDegree, int rootNote, const std::string& scale) const;  // Helper for numeric degree
+    std::vector<int> generateChordWithAlteration(int scaleDegree, int rootNote, const std::string& scale, ChordType alteration, int inversion = 0) const;
+    
+    // Inversion functions
+    std::vector<int> applyInversion(const std::vector<int>& chord, int inversion) const;
     
     // Chord progression functions
     std::vector<std::vector<int>> generateProgression(const std::vector<ScaleDegree>& degrees) const;

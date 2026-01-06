@@ -47,7 +47,7 @@ xcode-select --install
    ```
 
 3. Build Release version:
-   ```bash
+   ```bashp
    xcodebuild -project NewProject.xcodeproj -configuration Release build
    ```
 
@@ -149,3 +149,15 @@ chord_gen_plugin/
 ## Development
 
 To modify the emotion wheel chords, edit `Source/EmotionWheel.h` and update the interval definitions in the `initializeEmotions()` method.
+
+
+# Build ARM64 Release
+cd /Users/zac/Programming/chord_gen_plugin/Builds/MacOSX && \
+xcodebuild -project NewProject.xcodeproj -configuration Release -arch arm64 build && \
+\
+rm -rf "build/Release/NewProject.app/Contents/Resources/assets" && \
+mkdir -p "build/Release/NewProject.app/Contents/Resources/assets" && \
+cp /Users/zac/Programming/chord_gen_plugin/assets/*.aif "build/Release/NewProject.app/Contents/Resources/assets/" && \
+cd build/Release && \
+rm -f ChordBuilder-ARM64.zip && \
+zip -r ChordBuilder-ARM64.zip NewProject.app
