@@ -208,7 +208,7 @@ MainComponent::MainComponent() : keyboard(keyboardState, juce::MidiKeyboardCompo
     };
     addAndMakeVisible(rootBoostSlider);
     
-    rootBoostLabel.setText("Root Boost:", juce::dontSendNotification);
+    rootBoostLabel.setText("Bass Boost:", juce::dontSendNotification);
     addAndMakeVisible(rootBoostLabel);
     
     // Setup emotion buttons
@@ -610,54 +610,19 @@ void MainComponent::getNextAudioBlock (const juce::AudioSourceChannelInfo& buffe
                 {
                     auto& chord = currentProgression[currentChordIndex];
                     
-                    // Get the root note of the current key (0-11 pitch class)
-                    auto scaleNotes = keyManager.getScaleNotes();
-                    int keyRootPitchClass = scaleNotes.empty() ? 0 : scaleNotes[0];
-                    
-                    // Check if the chord contains the root note (any octave)
-                    bool hasRootNote = false;
-                    for (int note : chord)
-                    {
-                        if ((note % 12) == keyRootPitchClass)
-                        {
-                            hasRootNote = true;
-                            break;
-                        }
-                    }
-                    
-                    // If chord doesn't have root, add it as bass note
-                    if (!hasRootNote)
-                    {
-                        int bassRootNote = 48 + keyRootPitchClass;
-                        
-                        // Set gain for bass root
-                        for (int v = 0; v < synth.getNumVoices(); ++v)
-                        {
-                            if (auto* voice = dynamic_cast<SimpleSamplerVoice*>(synth.getVoice(v)))
-                            {
-                                if (!voice->isVoiceActive())
-                                {
-                                    voice->setGainMultiplier(rootBoostAmount);
-                                    break;
-                                }
-                            }
-                        }
-                        
-                        synth.noteOn(1, bassRootNote, 0.5f);
-                        currentChordNotes.push_back(bassRootNote);
-                    }
+                    // Find the lowest note in the chord for bass boost
+                    int lowestNote = *std::min_element(chord.begin(), chord.end());
                     
                     // Start new chord notes with gain control
                     for (int note : chord)
                     {
                         if (note >= 0 && note < 128)
                         {
-                            // Check if this note's pitch class matches the key root
-                            int notePitchClass = note % 12;
-                            bool isKeyRoot = (notePitchClass == keyRootPitchClass);
+                            // Apply bass boost to the lowest note in the chord
+                            bool isBassNote = (note == lowestNote);
                             
-                            // Calculate gain multiplier: boost root, keep others at 1.0
-                            float gainMult = isKeyRoot ? rootBoostAmount : 1.0f;
+                            // Calculate gain multiplier: boost bass, keep others at 1.0
+                            float gainMult = isBassNote ? rootBoostAmount : 1.0f;
                             gainMult = juce::jlimit(0.1f, 3.0f, gainMult);
                             
                             // Find an inactive voice and set its gain multiplier
@@ -1226,56 +1191,21 @@ void MainComponent::playChord(const std::vector<int>& chord)
     // Clear current chord tracking
     currentChordNotes.clear();
     
-    // Get the root note of the current key (0-11 pitch class)
-    auto scaleNotes = keyManager.getScaleNotes();
-    int keyRootPitchClass = scaleNotes.empty() ? 0 : scaleNotes[0];  // First note of scale is the root
-    
-    // Check if the chord contains the root note (any octave)
-    bool hasRootNote = false;
-    for (int note : chord)
-    {
-        if ((note % 12) == keyRootPitchClass)
-        {
-            hasRootNote = true;
-            break;
-        }
-    }
-    
-    // If chord doesn't have root, add it as bass note (C3 = 48 + root pitch class)
-    if (!hasRootNote)
-    {
-        int bassRootNote = 48 + keyRootPitchClass;
-        
-        // Set gain for bass root
-        for (int v = 0; v < synth.getNumVoices(); ++v)
-        {
-            if (auto* voice = dynamic_cast<SimpleSamplerVoice*>(synth.getVoice(v)))
-            {
-                if (!voice->isVoiceActive())
-                {
-                    voice->setGainMultiplier(rootBoostAmount);
-                    break;
-                }
-            }
-        }
-        
-        synth.noteOn(1, bassRootNote, 0.5f);
-        currentChordNotes.push_back(bassRootNote);
-    }
+    // Find the lowest note in the chord for bass boost
+    int lowestNote = *std::min_element(chord.begin(), chord.end());
     
     // Play new chord notes directly with synth to control gain
-    // Apply root boost to any note that matches the key's root pitch class
+    // Apply bass boost to the lowest note in the chord
     for (size_t i = 0; i < chord.size(); ++i)
     {
         int note = chord[i];
         if (note >= 0 && note < 128)
         {
-            // Check if this note's pitch class matches the key root
-            int notePitchClass = note % 12;
-            bool isKeyRoot = (notePitchClass == keyRootPitchClass);
+            // Apply bass boost to the lowest note in the chord
+            bool isBassNote = (note == lowestNote);
             
-            // Calculate gain multiplier: boost root, keep others at 1.0
-            float gainMult = isKeyRoot ? rootBoostAmount : 1.0f;
+            // Calculate gain multiplier: boost bass, keep others at 1.0
+            float gainMult = isBassNote ? rootBoostAmount : 1.0f;
             gainMult = juce::jlimit(0.1f, 3.0f, gainMult);
             
             // Find an inactive voice and set its gain multiplier before starting the note

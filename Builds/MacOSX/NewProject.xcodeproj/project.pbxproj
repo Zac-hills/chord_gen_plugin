@@ -43,6 +43,7 @@
 		DC82FA7EC0969E5660676B25 /* Accelerate.framework */ = {isa = PBXBuildFile; fileRef = BFC5AC3019A6FCD0091AA8A4; };
 		EF6F1F419B46D7508C89BD54 /* include_juce_audio_devices.mm */ = {isa = PBXBuildFile; fileRef = 301817763BD9F1E4653FE78A; };
 		EFF1054B45681BB35CBCB328 /* Main.cpp */ = {isa = PBXBuildFile; fileRef = F15269C5F045931B16E6C324; };
+		AA11BB22CC33DD44EE55FF01 /* WebUIComponent.cpp */ = {isa = PBXBuildFile; fileRef = AA11BB22CC33DD44EE55FF04; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -99,6 +100,10 @@
 		F166A346FEB8303A660D8C80 /* QuartzCore.framework */ /* QuartzCore.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = QuartzCore.framework; path = System/Library/Frameworks/QuartzCore.framework; sourceTree = SDKROOT; };
 		F6491E68CE2662B9204037B1 /* App */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = NewProject.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		F911758861000ED7C7D70A0F /* JuceHeader.h */ /* JuceHeader.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = JuceHeader.h; path = ../../JuceLibraryCode/JuceHeader.h; sourceTree = SOURCE_ROOT; };
+		AA11BB22CC33DD44EE55FF03 /* WebUIComponent.h */ /* WebUIComponent.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = WebUIComponent.h; path = ../../Source/WebUIComponent.h; sourceTree = SOURCE_ROOT; };
+		AA11BB22CC33DD44EE55FF04 /* WebUIComponent.cpp */ /* WebUIComponent.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = WebUIComponent.cpp; path = ../../Source/WebUIComponent.cpp; sourceTree = SOURCE_ROOT; };
+		AA11BB22CC33DD44EE55FF05 /* MainComponent_NativeUI.h */ /* MainComponent_NativeUI.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = MainComponent_NativeUI.h; path = ../../Source/MainComponent_NativeUI.h; sourceTree = SOURCE_ROOT; };
+		AA11BB22CC33DD44EE55FF06 /* MainComponent_NativeUI.cpp */ /* MainComponent_NativeUI.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = MainComponent_NativeUI.cpp; path = ../../Source/MainComponent_NativeUI.cpp; sourceTree = SOURCE_ROOT; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -237,6 +242,10 @@
 				3D4D4C8D552952EF96E6E329,
 				3181DD16E05F54334D09F961,
 				B31F5AF775D545E57E420D4A,
+				AA11BB22CC33DD44EE55FF03,
+				AA11BB22CC33DD44EE55FF04,
+				AA11BB22CC33DD44EE55FF05,
+				AA11BB22CC33DD44EE55FF06,
 			);
 			name = Source;
 			sourceTree = "<group>";
@@ -331,6 +340,7 @@
 				5467ACF4990910A0AB832EB9,
 				493EF62AB387C8CB85101B25,
 				63EFF2034CE28C8CFF47AF3B,
+				AA11BB22CC33DD44EE55FF01,
 				3DEDB8B9BB5CA67827B5B42F,
 				EF6F1F419B46D7508C89BD54,
 				8385C3311CAEA37751CF7191,
@@ -454,7 +464,7 @@
 				INFOPLIST_FILE = Info-App.plist;
 				INFOPLIST_PREPROCESS = NO;
 				INSTALL_PATH = "$(HOME)/Applications";
-				MACOSX_DEPLOYMENT_TARGET = 10.11;
+				MACOSX_DEPLOYMENT_TARGET = 11.0;
 				MTL_HEADER_SEARCH_PATHS = "$(SRCROOT)/../../JuceLibraryCode $(SRCROOT)/../../JuceLibraryCode/modules";
 				PRODUCT_BUNDLE_IDENTIFIER = com.yourcompany.NewProject;
 				PRODUCT_NAME = "NewProject";
@@ -517,7 +527,7 @@
 				INFOPLIST_PREPROCESS = NO;
 				INSTALL_PATH = "$(HOME)/Applications";
 				LLVM_LTO = YES;
-				MACOSX_DEPLOYMENT_TARGET = 10.11;
+				MACOSX_DEPLOYMENT_TARGET = 11.0;
 				MTL_HEADER_SEARCH_PATHS = "$(SRCROOT)/../../JuceLibraryCode $(SRCROOT)/../../JuceLibraryCode/modules";
 				PRODUCT_BUNDLE_IDENTIFIER = com.yourcompany.NewProject;
 				PRODUCT_NAME = "NewProject";

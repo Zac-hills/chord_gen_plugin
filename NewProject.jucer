@@ -17,6 +17,14 @@
             file="Source/ThemeManager.h"/>
       <FILE id="ThemeMgrCpp" name="ThemeManager.cpp" compile="1" resource="0"
             file="Source/ThemeManager.cpp"/>
+      <FILE id="Aa1b2C" name="WebUIComponent.h" compile="0" resource="0"
+            file="Source/WebUIComponent.h"/>
+      <FILE id="Bb3c4D" name="WebUIComponent.cpp" compile="1" resource="0"
+            file="Source/WebUIComponent.cpp"/>
+      <FILE id="Cc5d6E" name="MainComponent_NativeUI.h" compile="0" resource="0"
+            file="Source/MainComponent_NativeUI.h"/>
+      <FILE id="Dd7e8F" name="MainComponent_NativeUI.cpp" compile="1" resource="0"
+            file="Source/MainComponent_NativeUI.cpp"/>
     </GROUP>
   </MAINGROUP>
   <MODULES>
@@ -32,7 +40,7 @@
     <MODULE id="juce_gui_basics" showAllCode="1" useLocalCopy="1" useGlobalPath="1"/>
     <MODULE id="juce_gui_extra" showAllCode="1" useLocalCopy="1" useGlobalPath="1"/>
   </MODULES>
-  <JUCEOPTIONS JUCE_STRICT_REFCOUNTEDPOINTER="1"/>
+  <JUCEOPTIONS JUCE_STRICT_REFCOUNTEDPOINTER="1" JUCE_WEB_BROWSER="1"/>
   <EXPORTFORMATS>
     <LINUX_MAKE targetFolder="Builds/LinuxMakefile">
       <CONFIGURATIONS>
@@ -40,17 +48,17 @@
         <CONFIGURATION isDebug="0" name="Release" targetName="NewProject"/>
       </CONFIGURATIONS>
       <MODULEPATHS>
-        <MODULEPATH id="juce_audio_basics" path="../../juce/juce-8.0.10-linux/JUCE/modules"/>
-        <MODULEPATH id="juce_audio_devices" path="../../juce/juce-8.0.10-linux/JUCE/modules"/>
-        <MODULEPATH id="juce_audio_formats" path="../../juce/juce-8.0.10-linux/JUCE/modules"/>
-        <MODULEPATH id="juce_audio_processors" path="../../juce/juce-8.0.10-linux/JUCE/modules"/>
-        <MODULEPATH id="juce_audio_utils" path="../../juce/juce-8.0.10-linux/JUCE/modules"/>
-        <MODULEPATH id="juce_core" path="../../juce/juce-8.0.10-linux/JUCE/modules"/>
-        <MODULEPATH id="juce_data_structures" path="../../juce/juce-8.0.10-linux/JUCE/modules"/>
-        <MODULEPATH id="juce_events" path="../../juce/juce-8.0.10-linux/JUCE/modules"/>
-        <MODULEPATH id="juce_graphics" path="../../juce/juce-8.0.10-linux/JUCE/modules"/>
-        <MODULEPATH id="juce_gui_basics" path="../../juce/juce-8.0.10-linux/JUCE/modules"/>
-        <MODULEPATH id="juce_gui_extra" path="../../juce/juce-8.0.10-linux/JUCE/modules"/>
+        <MODULEPATH id="juce_audio_basics" path="/Users/zac/Downloads/JUCE"/>
+        <MODULEPATH id="juce_audio_devices" path="/Users/zac/Downloads/JUCE"/>
+        <MODULEPATH id="juce_audio_formats" path="/Users/zac/Downloads/JUCE"/>
+        <MODULEPATH id="juce_audio_processors" path="/Users/zac/Downloads/JUCE"/>
+        <MODULEPATH id="juce_audio_utils" path="/Users/zac/Downloads/JUCE"/>
+        <MODULEPATH id="juce_core" path="/Users/zac/Downloads/JUCE"/>
+        <MODULEPATH id="juce_data_structures" path="/Users/zac/Downloads/JUCE"/>
+        <MODULEPATH id="juce_events" path="/Users/zac/Downloads/JUCE"/>
+        <MODULEPATH id="juce_graphics" path="/Users/zac/Downloads/JUCE"/>
+        <MODULEPATH id="juce_gui_basics" path="/Users/zac/Downloads/JUCE"/>
+        <MODULEPATH id="juce_gui_extra" path="/Users/zac/Downloads/JUCE"/>
       </MODULEPATHS>
     </LINUX_MAKE>
     <XCODE_MAC targetFolder="Builds/MacOSX" microphonePermissionNeeded="0" cameraPermissionNeeded="0"
@@ -59,9 +67,9 @@
                customXcodeFlags="" hardenedRuntime="1" appSandbox="0">
       <CONFIGURATIONS>
         <CONFIGURATION isDebug="1" name="Debug" targetName="NewProject" osxSDK="default"
-                       osxCompatibility="10.11 SDK" osxArchitecture="x86_64,arm64" macOSDeploymentTarget="10.11"/>
+                       osxCompatibility="11.0 SDK" osxArchitecture="x86_64,arm64" macOSDeploymentTarget="11.0"/>
         <CONFIGURATION isDebug="0" name="Release" targetName="NewProject" osxSDK="default"
-                       osxCompatibility="10.11 SDK" osxArchitecture="x86_64,arm64" macOSDeploymentTarget="10.11"/>
+                       osxCompatibility="11.0 SDK" osxArchitecture="x86_64,arm64" macOSDeploymentTarget="11.0"/>
       </CONFIGURATIONS>
       <MODULEPATHS>
         <MODULEPATH id="juce_audio_basics" path="JuceLibraryCode"/>

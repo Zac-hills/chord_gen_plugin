@@ -1,0 +1,158 @@
+/* ─── CSS Variables / Theme ─────────────────────────────────── */
+:root {
+  --bg-main: #ebebeb;
+  --bg-secondary: #ebebeb;
+  --bg-control: #0f3460;
+  --bg-group: #1a1a2e;
+  --text-primary: #bbb7b7;
+  --text-secondary: #a0a0c0;
+  --accent-primary: #e94560;
+  --accent-secondary: #533483;
+  --border: #2a2a4e;
+  --border-light: #3a3a5e;
+  --button-bg: #ebebeb;
+  --button-hover: #1a4a7a;
+  --button-active: #e94560;
+  --button-text: #e0e0e0;
+  --combo-bg: #16213e;
+  --success: #4ade80;
+  --warning: #f59e0b;
+}
+
+/* ─── Reset ────────────────────────────────────────────────── */
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html, body, #app {
+  height: 100%;
+  width: 100%;
+  overflow: hidden;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+  background: var(--bg-main);
+  color: var(--text-primary);
+  font-size: 13px;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  /* Prevent text selection in the app (feels more native) */
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+/* ─── Utility ──────────────────────────────────────────────── */
+button {
+  cursor: pointer;
+  border: 1px solid var(--border-light);
+  background: var(--button-bg);
+  color: var(--button-text);
+  padding: 6px 12px;
+  border-radius: 4px;
+  font-size: 12px;
+  transition: background 0.15s, transform 0.1s;
+}
+
+button:hover {
+  background: var(--button-hover);
+}
+
+button:active {
+  background: var(--button-active);
+  transform: scale(0.97);
+}
+
+button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+select {
+  background: var(--combo-bg);
+  color: var(--text-primary);
+  border: 1px solid var(--border-light);
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  outline: none;
+}
+
+select:focus {
+  border-color: var(--accent-primary);
+}
+
+input[type="number"],
+input[type="text"] {
+  background: var(--combo-bg);
+  color: var(--text-primary);
+  border: 1px solid var(--border-light);
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  outline: none;
+  width: 60px;
+  text-align: center;
+}
+
+input:focus {
+  border-color: var(--accent-primary);
+}
+
+input[type="range"] {
+  -webkit-appearance: none;
+  appearance: none;
+  background: transparent;
+  cursor: pointer;
+}
+
+input[type="range"]::-webkit-slider-track {
+  background: var(--bg-control);
+  height: 4px;
+  border-radius: 2px;
+}
+
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--accent-primary);
+  margin-top: -5px;
+}
+
+/* ─── Group Box ────────────────────────────────────────────── */
+.group-box {
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 14px 12px 12px;
+  position: relative;
+}
+
+.group-box .group-title {
+  position: absolute;
+  top: -9px;
+  left: 14px;
+  background: var(--bg-main);
+  padding: 0 6px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* ─── Scrollbar ────────────────────────────────────────────── */
+::-webkit-scrollbar {
+  width: 6px;
+}
+::-webkit-scrollbar-track {
+  background: var(--bg-main);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--border-light);
+  border-radius: 3px;
+}

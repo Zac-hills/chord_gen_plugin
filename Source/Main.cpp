@@ -7,7 +7,13 @@
 */
 
 #include <JuceHeader.h>
-#include "MainComponent.h"
+
+// Use WebView-based Vue UI when available, otherwise fall back to native UI
+#if JUCE_WEB_BROWSER
+ #include "WebUIComponent.h"
+#else
+ #include "MainComponent.h"
+#endif
 
 //==============================================================================
 class NewProjectApplication  : public juce::JUCEApplication
@@ -65,7 +71,12 @@ public:
                               DocumentWindow::allButtons)
         {
             setUsingNativeTitleBar (false);  // Use custom title bar
+
+           #if JUCE_WEB_BROWSER
+            setContentOwned (new WebUIComponent(), true);
+           #else
             setContentOwned (new MainComponent(), true);
+           #endif
 
            #if JUCE_IOS || JUCE_ANDROID
             setFullScreen (true);

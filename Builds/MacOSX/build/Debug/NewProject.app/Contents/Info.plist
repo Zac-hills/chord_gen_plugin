@@ -3,7 +3,7 @@
 <plist version="1.0">
 <dict>
 	<key>BuildMachineOSBuild</key>
-	<string>24G325</string>
+	<string>24G517</string>
 	<key>CFBundleDisplayName</key>
 	<string>Alex Rome - Chord Builder</string>
 	<key>CFBundleExecutable</key>
@@ -41,7 +41,7 @@
 	<key>DTXcodeBuild</key>
 	<string>17A400</string>
 	<key>LSMinimumSystemVersion</key>
-	<string>10.11</string>
+	<string>11.0</string>
 	<key>NSHighResolutionCapable</key>
 	<true/>
 </dict>
